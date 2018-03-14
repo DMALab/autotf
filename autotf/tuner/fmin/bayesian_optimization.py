@@ -2,20 +2,20 @@ import logging
 import george
 import numpy as np
 
-from robo.priors.default_priors import DefaultPrior
-from robo.models.gaussian_process import GaussianProcess
-from robo.models.gaussian_process_mcmc import GaussianProcessMCMC
-from robo.models.random_forest import RandomForest
-from robo.maximizers.direct import Direct
-from robo.maximizers.cmaes import CMAES
-from robo.maximizers.scipy_optimizer import SciPyOptimizer
-from robo.maximizers.random_sampling import RandomSampling
-from robo.solver.bayesian_optimization import BayesianOptimization
-from robo.acquisition_functions.ei import EI
-from robo.acquisition_functions.pi import PI
-from robo.acquisition_functions.log_ei import LogEI
-from robo.acquisition_functions.lcb import LCB
-from robo.acquisition_functions.marginalization import MarginalizationGPMCMC
+from tuner.priors.default_priors import DefaultPrior
+from tuner.models.gaussian_process import GaussianProcess
+from tuner.models.gaussian_process_mcmc import GaussianProcessMCMC
+from tuner.models.random_forest import RandomForest
+from tuner.maximizers.direct import Direct
+from tuner.maximizers.cmaes import CMAES
+from tuner.maximizers.scipy_optimizer import SciPyOptimizer
+from tuner.maximizers.random_sampling import RandomSampling
+from tuner.solver.bayesian_optimization import BayesianOptimization
+from tuner.acquisition_functions.ei import EI
+from tuner.acquisition_functions.pi import PI
+from tuner.acquisition_functions.log_ei import LogEI
+from tuner.acquisition_functions.lcb import LCB
+from tuner.acquisition_functions.marginalization import MarginalizationGPMCMC
 
 
 logger = logging.getLogger(__name__)

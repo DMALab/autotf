@@ -3,7 +3,7 @@ import os
 import DIRECT
 import numpy as np
 
-from robo.maximizers.base_maximizer import BaseMaximizer
+from tuner.maximizers.base_maximizer import BaseMaximizer
 
 
 class Direct(BaseMaximizer):

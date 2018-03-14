@@ -6,9 +6,9 @@ import numpy as np
 
 from copy import deepcopy
 
-from robo.models.base_model import BaseModel
-from robo.models.gaussian_process import GaussianProcess
-from robo.util import normalization
+from tuner.models.base_model import BaseModel
+from tuner.models.gaussian_process import GaussianProcess
+from tuner.util import normalization
 
 logger = logging.getLogger(__name__)
 
@@ -186,12 +186,12 @@ class GaussianProcessMCMC(BaseModel):
         # hyperparameters live on a log scale
         if np.any((-20 > theta) + (theta > 20)):
             return -np.inf
-            
+
         # The last entry is always the noise
         sigma_2 = np.exp(theta[-1])
         # Update the kernel and compute the lnlikelihood.
         self.gp.kernel.pars = np.exp(theta[:-1])
-        
+
         try:
             self.gp.compute(self.X, yerr=np.sqrt(sigma_2))
         except:

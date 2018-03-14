@@ -5,8 +5,8 @@ import numpy as np
 
 from scipy import optimize
 
-from robo.util import normalization
-from robo.models.base_model import BaseModel
+from tuner.util import normalization
+from tuner.models.base_model import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -169,14 +169,14 @@ class GaussianProcess(BaseModel):
 
         self.gp.kernel[:] = theta[:-1]
         noise = np.exp(theta[-1])
-        
+
         self.gp.compute(self.X, yerr=np.sqrt(noise))
 
         self.gp._compute_alpha(self.y)
         K_inv = self.gp.solver.apply_inverse(np.eye(self.gp._alpha.size),
                                              in_place=True)
 
-        # The gradients of the Gram matrix, for the noise this is just 
+        # The gradients of the Gram matrix, for the noise this is just
         # the identity matrix
         Kg = self.gp.kernel.gradient(self.gp._x)
         Kg = np.concatenate((Kg, np.eye(Kg.shape[0])[:, :, None]), axis=2)
@@ -330,7 +330,7 @@ class GaussianProcess(BaseModel):
             return funcs[None, :]
         else:
             return funcs
-        
+
     def get_incumbent(self):
         """
         Returns the best observed point and its function value

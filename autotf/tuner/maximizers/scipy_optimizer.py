@@ -4,8 +4,8 @@ import numpy as np
 from scipy import optimize
 from functools import partial
 
-from robo.maximizers.base_maximizer import BaseMaximizer
-from robo.initial_design import init_random_uniform
+from tuner.maximizers.base_maximizer import BaseMaximizer
+from tuner.initial_design import init_random_uniform
 
 
 class SciPyOptimizer(BaseMaximizer):
