@@ -3,7 +3,7 @@ import numpy as np
 
 from copy import deepcopy
 
-from robo.acquisition_functions.base_acquisition import BaseAcquisitionFunction
+from tuner.acquisition_functions.base_acquisition import BaseAcquisitionFunction
 
 logger = logging.getLogger(__name__)
 

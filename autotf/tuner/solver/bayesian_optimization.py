@@ -4,8 +4,8 @@ import json
 import logging
 import numpy as np
 
-from robo.initial_design.init_random_uniform import init_random_uniform
-from robo.solver.base_solver import BaseSolver
+from tuner.initial_design.init_random_uniform import init_random_uniform
+from tuner.solver.base_solver import BaseSolver
 
 
 logger = logging.getLogger(__name__)
@@ -258,5 +258,4 @@ class BayesianOptimization(BaseSolver):
         data["time_func_eval"] = self.time_func_evals[it]
         data["iteration"] = it
 
-        json.dump(data, open(os.path.join(self.output_path, "robo_iter_%d.json" % it), "w"))
-
+        json.dump(data, open(os.path.join(self.output_path, "tuner_iter_%d.json" % it), "w"))

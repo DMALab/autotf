@@ -5,14 +5,14 @@ import george
 import logging
 import numpy as np
 
-from robo.models.mtbo_gp import MTBOGPMCMC
-from robo.initial_design import init_random_uniform
-from robo.priors.env_priors import MTBOPrior
-from robo.acquisition_functions.information_gain_per_unit_cost import InformationGainPerUnitCost
-from robo.acquisition_functions.marginalization import MarginalizationGPMCMC
-from robo.maximizers.direct import Direct
-from robo.util import normalization
-from robo.util.incumbent_estimation import projected_incumbent_estimation
+from tuner.models.mtbo_gp import MTBOGPMCMC
+from tuner.initial_design import init_random_uniform
+from tuner.priors.env_priors import MTBOPrior
+from tuner.acquisition_functions.information_gain_per_unit_cost import InformationGainPerUnitCost
+from tuner.acquisition_functions.marginalization import MarginalizationGPMCMC
+from tuner.maximizers.direct import Direct
+from tuner.util import normalization
+from tuner.util.incumbent_estimation import projected_incumbent_estimation
 
 
 logger = logging.getLogger(__name__)

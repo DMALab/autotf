@@ -4,8 +4,8 @@ import numpy as np
 
 from collections import deque
 
-from robo.models.base_model import BaseModel
-from robo.util.normalization import (zero_mean_unit_var_normalization,
+from tuner.models.base_model import BaseModel
+from tuner.util.normalization import (zero_mean_unit_var_normalization,
                                      zero_mean_unit_var_unnormalization)
 
 try:

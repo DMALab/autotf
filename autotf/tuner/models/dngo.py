@@ -16,10 +16,10 @@ except ImportError as e:
                      "Lasagne (pip install lasagne)")
 
 
-from robo.models.base_model import BaseModel
-from robo.priors.bayesian_linear_regression_prior import BayesianLinearRegressionPrior
-from robo.models.bayesian_linear_regression import BayesianLinearRegression
-from robo.util.normalization import zero_mean_unit_var_normalization, zero_mean_unit_var_unnormalization
+from tuner.models.base_model import BaseModel
+from tuner.priors.bayesian_linear_regression_prior import BayesianLinearRegressionPrior
+from tuner.models.bayesian_linear_regression import BayesianLinearRegression
+from tuner.util.normalization import zero_mean_unit_var_normalization, zero_mean_unit_var_unnormalization
 
 
 logger = logging.getLogger(__name__)
@@ -69,12 +69,12 @@ class DNGO(BaseModel):
         Deep Networks for Global Optimization [1]. This module performs
         Bayesian Linear Regression with basis function extracted from a
         feed forward neural network.
-        
-        [1] J. Snoek, O. Rippel, K. Swersky, R. Kiros, N. Satish, 
+
+        [1] J. Snoek, O. Rippel, K. Swersky, R. Kiros, N. Satish,
             N. Sundaram, M.~M.~A. Patwary, Prabhat, R.~P. Adams
             Scalable Bayesian Optimization Using Deep Neural Networks
             Proc. of ICML'15
-            
+
         Parameters
         ----------
         batch_size: int
@@ -120,7 +120,7 @@ class DNGO(BaseModel):
             self.rng = np.random.RandomState(np.random.randint(0, 10000))
         else:
             self.rng = rng
-        
+
         self.X = None
         self.y = None
         self.network = None

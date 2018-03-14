@@ -5,9 +5,9 @@ import scipy
 import numpy as np
 import emcee
 
-from robo.acquisition_functions.log_ei import LogEI
-from robo.acquisition_functions.base_acquisition import BaseAcquisitionFunction
-from robo.util import epmgp
+from tuner.acquisition_functions.log_ei import LogEI
+from tuner.acquisition_functions.base_acquisition import BaseAcquisitionFunction
+from tuner.util import epmgp
 
 sq2 = np.sqrt(2)
 l2p = np.log(2) + np.log(np.pi)

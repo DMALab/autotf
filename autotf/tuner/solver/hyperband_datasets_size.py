@@ -2,7 +2,7 @@ import os
 import time
 import json
 import logging
-from robo.solver.base_solver import BaseSolver
+from tuner.solver.base_solver import BaseSolver
 
 import numpy as np
 

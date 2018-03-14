@@ -2,15 +2,15 @@ import logging
 import george
 import numpy as np
 
-from robo.priors.default_priors import DefaultPrior
-from robo.models.gaussian_process import GaussianProcess
-from robo.models.gaussian_process_mcmc import GaussianProcessMCMC
-from robo.maximizers.direct import Direct
-from robo.maximizers.cmaes import CMAES
-from robo.solver.bayesian_optimization import BayesianOptimization
-from robo.acquisition_functions.information_gain import InformationGain
-from robo.acquisition_functions.ei import EI
-from robo.acquisition_functions.marginalization import MarginalizationGPMCMC
+from tuner.priors.default_priors import DefaultPrior
+from tuner.models.gaussian_process import GaussianProcess
+from tuner.models.gaussian_process_mcmc import GaussianProcessMCMC
+from tuner.maximizers.direct import Direct
+from tuner.maximizers.cmaes import CMAES
+from tuner.solver.bayesian_optimization import BayesianOptimization
+from tuner.acquisition_functions.information_gain import InformationGain
+from tuner.acquisition_functions.ei import EI
+from tuner.acquisition_functions.marginalization import MarginalizationGPMCMC
 
 
 logger = logging.getLogger(__name__)

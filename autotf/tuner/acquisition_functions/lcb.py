@@ -1,7 +1,7 @@
 import logging
 import numpy as np
 
-from robo.acquisition_functions.base_acquisition import BaseAcquisitionFunction
+from tuner.acquisition_functions.base_acquisition import BaseAcquisitionFunction
 
 
 logger = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ class LCB(BaseAcquisitionFunction):
         LCB(X) := - (\mu(x) - \kappa\sigma(x))
 
         Note: We want to find the minimum of and thus minimize the lower confidence bound.
-        But RoBO always maximizes the acquisition function
+        But tuner always maximizes the acquisition function
 
         Parameters
         ----------
@@ -61,7 +61,7 @@ class LCB(BaseAcquisitionFunction):
         """
         mean, var = self.model.predict(X)
 
-        # RoBO maximizes the acquisition function but we want to minimize the lower confidence bound
+        # tuner maximizes the acquisition function but we want to minimize the lower confidence bound
         acq = - (mean - self.par * np.sqrt(var))
         if derivative:
             dm, dv = self.model.predictive_gradients(X)

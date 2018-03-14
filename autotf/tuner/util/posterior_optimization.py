@@ -3,7 +3,7 @@ import numpy as np
 
 from scipy import optimize
 
-from robo.initial_design.init_random_uniform import init_random_uniform
+from tuner.initial_design.init_random_uniform import init_random_uniform
 
 
 def posterior_mean_optimization(model, lower, upper, n_restarts=10, method="scipy", with_gradients=False):

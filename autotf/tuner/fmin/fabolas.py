@@ -5,15 +5,15 @@ import george
 import logging
 import numpy as np
 
-from robo.models.fabolas_gp import FabolasGPMCMC
-from robo.initial_design import init_random_uniform
-from robo.priors.env_priors import EnvPrior
-from robo.acquisition_functions.information_gain_per_unit_cost import InformationGainPerUnitCost
-from robo.acquisition_functions.ei import EI
-from robo.acquisition_functions.marginalization import MarginalizationGPMCMC
-from robo.maximizers.direct import Direct
+from tuner.models.fabolas_gp import FabolasGPMCMC
+from tuner.initial_design import init_random_uniform
+from tuner.priors.env_priors import EnvPrior
+from tuner.acquisition_functions.information_gain_per_unit_cost import InformationGainPerUnitCost
+from tuner.acquisition_functions.ei import EI
+from tuner.acquisition_functions.marginalization import MarginalizationGPMCMC
+from tuner.maximizers.direct import Direct
 
-from robo.util.incumbent_estimation import projected_incumbent_estimation
+from tuner.util.incumbent_estimation import projected_incumbent_estimation
 
 
 logger = logging.getLogger(__name__)
@@ -314,4 +314,3 @@ def fabolas(objective_function, lower, upper, s_min, s_max,
     results["c"] = c
 
     return results
-

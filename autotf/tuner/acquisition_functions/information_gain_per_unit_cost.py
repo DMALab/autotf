@@ -1,7 +1,7 @@
 import emcee
 import numpy as np
 
-from robo.acquisition_functions.information_gain import InformationGain
+from tuner.acquisition_functions.information_gain import InformationGain
 
 
 class InformationGainPerUnitCost(InformationGain):
@@ -14,12 +14,12 @@ class InformationGainPerUnitCost(InformationGain):
         """
         Information gain per unit cost as described in Swersky et al. [1] which
         computes the information gain of a configuration divided by it's cost.
-        
+
         This implementation slightly differs from the implementation of
         Swersky et al. as it additionally adds the optimization overhead to
         the cost. You can simply set the optimization overhead to 0 to obtain
         the original formulation.
-        
+
         [1] Swersky, K., Snoek, J., and Adams, R.
             Multi-task Bayesian optimization.
             In Proc. of NIPS 13, 2013.

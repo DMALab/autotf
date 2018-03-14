@@ -1,7 +1,7 @@
 
 import numpy as np
 
-from autotf.tuner.fmin import random_search
+from tuner.fmin import random_search
 
 # The optimization function that we want to optimize.
 # It gets a numpy array with shape (1,D) where D is the number of input dimensions

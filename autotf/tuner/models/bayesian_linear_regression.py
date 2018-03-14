@@ -4,8 +4,8 @@ import numpy as np
 
 from scipy import optimize
 
-from robo.models.base_model import BaseModel
-from robo.priors.bayesian_linear_regression_prior import BayesianLinearRegressionPrior
+from tuner.models.base_model import BaseModel
+from tuner.priors.bayesian_linear_regression_prior import BayesianLinearRegressionPrior
 
 
 def linear_basis_func(x):
@@ -172,28 +172,28 @@ class BayesianLinearRegression(BaseModel):
                     self.p0, _, _ = sampler.run_mcmc(self.p0,
                                                      self.burnin_steps,
                                                      rstate0=self.rng)
-    
+
                     self.burned = True
-    
+
                 # Start sampling
                 pos, _, _ = sampler.run_mcmc(self.p0,
                                              self.chain_length,
                                              rstate0=self.rng)
-    
+
                 # Save the current position, it will be the start point in
                 # the next iteration
                 self.p0 = pos
-    
+
                 # Take the last samples from each walker
                 self.hypers = np.exp(sampler.chain[:, -1])
             else:
-                # Optimize hyperparameters of the Bayesian linear regression        
+                # Optimize hyperparameters of the Bayesian linear regression
                 res = optimize.fmin(self.negative_mll, self.rng.rand(2))
                 self.hypers = [[np.exp(res[0]), np.exp(res[1])]]
-                
+
         else:
             self.hypers = [[self.alpha, self.beta]]
-        
+
         self.models = []
         for sample in self.hypers:
             alpha = sample[0]
@@ -232,11 +232,11 @@ class BayesianLinearRegression(BaseModel):
             X_transformed = self.basis_func(X_test)
         else:
             X_transformed = X_test
-            
+
         # Marginalise predictions over hyperparameters
         mu = np.zeros([len(self.hypers), X_transformed.shape[0]])
         var = np.zeros([len(self.hypers), X_transformed.shape[0]])
-    
+
         for i, h in enumerate(self.hypers):
             mu[i] = np.dot(self.models[i][0].T, X_transformed.T)
             var[i] = 1. / h[1] + np.diag(np.dot(np.dot(X_transformed, self.models[i][1]), X_transformed.T))

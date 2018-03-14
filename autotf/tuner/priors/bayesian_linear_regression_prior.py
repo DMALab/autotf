@@ -1,9 +1,9 @@
 
 import numpy as np
 
-from robo.priors.base_prior import BasePrior
-from robo.priors.base_prior import LognormalPrior
-from robo.priors.base_prior import HorseshoePrior
+from tuner.priors.base_prior import BasePrior
+from tuner.priors.base_prior import LognormalPrior
+from tuner.priors.base_prior import HorseshoePrior
 
 
 class BayesianLinearRegressionPrior(BasePrior):

@@ -1,16 +1,16 @@
 import logging
 import numpy as np
 
-from robo.models.bnn import BayesianNeuralNetwork
-from robo.maximizers.direct import Direct
-from robo.maximizers.cmaes import CMAES
-from robo.maximizers.scipy_optimizer import SciPyOptimizer
-from robo.maximizers.random_sampling import RandomSampling
-from robo.solver.bayesian_optimization import BayesianOptimization
-from robo.acquisition_functions.ei import EI
-from robo.acquisition_functions.pi import PI
-from robo.acquisition_functions.log_ei import LogEI
-from robo.acquisition_functions.lcb import LCB
+from tuner.models.bnn import BayesianNeuralNetwork
+from tuner.maximizers.direct import Direct
+from tuner.maximizers.cmaes import CMAES
+from tuner.maximizers.scipy_optimizer import SciPyOptimizer
+from tuner.maximizers.random_sampling import RandomSampling
+from tuner.solver.bayesian_optimization import BayesianOptimization
+from tuner.acquisition_functions.ei import EI
+from tuner.acquisition_functions.pi import PI
+from tuner.acquisition_functions.log_ei import LogEI
+from tuner.acquisition_functions.lcb import LCB
 
 
 logger = logging.getLogger(__name__)

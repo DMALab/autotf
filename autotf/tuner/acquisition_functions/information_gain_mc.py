@@ -3,10 +3,10 @@ import emcee
 import logging
 from scipy.stats import norm
 
-from robo.acquisition_functions.log_ei import LogEI
-from robo.acquisition_functions.base_acquisition import BaseAcquisitionFunction
-from robo.initial_design.init_random_uniform import init_random_uniform
-from robo.util import mc_part
+from tuner.acquisition_functions.log_ei import LogEI
+from tuner.acquisition_functions.base_acquisition import BaseAcquisitionFunction
+from tuner.initial_design.init_random_uniform import init_random_uniform
+from tuner.util import mc_part
 
 logger = logging.getLogger(__name__)
 

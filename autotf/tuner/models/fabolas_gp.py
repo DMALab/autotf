@@ -4,9 +4,9 @@ import numpy as np
 
 from copy import deepcopy
 
-from robo.util import normalization
-from robo.models.gaussian_process_mcmc import GaussianProcessMCMC
-from robo.models.gaussian_process import GaussianProcess
+from tuner.util import normalization
+from tuner.models.gaussian_process_mcmc import GaussianProcessMCMC
+from tuner.models.gaussian_process import GaussianProcess
 
 
 class FabolasGPMCMC(GaussianProcessMCMC):

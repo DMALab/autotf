@@ -1,7 +1,7 @@
 
 import numpy as np
-from robo.priors.base_prior import BasePrior, TophatPrior
-from robo.priors.base_prior import LognormalPrior, HorseshoePrior, NormalPrior
+from tuner.priors.base_prior import BasePrior, TophatPrior
+from tuner.priors.base_prior import LognormalPrior, HorseshoePrior, NormalPrior
 
 from scipy.stats import norm
 
