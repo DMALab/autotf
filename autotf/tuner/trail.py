@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
-from autotf.tuner.model import Model
+from autotf.model.base_model import Model
 
 
 class Trial(object):
