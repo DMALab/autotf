@@ -6,8 +6,8 @@ import numpy as np
 
 from tuner.initial_design.init_random_uniform import init_random_uniform
 from tuner.parallel_solver.base_parallel_solver import BaseParallelSolver
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-from base_parallel_solver import evaluate_func
+from concurrent.futures import ProcessPoolExecutor
+from tuner.parallel_solver.base_parallel_solver import evaluate_func
 
 logger = logging.getLogger(__name__)
 
@@ -98,22 +98,23 @@ class SyncParallelSolver(BaseParallelSolver):
                                        rng=self.rng)
             time_overhead = (time.time() - start_time_overhead) / self.init_points
 
-            # run all init config
+            # Run all initial config
             for i, x in enumerate(init):
                 logger.info("Evaluate: %s", x)
-                trial_statistics.append(self.pool.submit(evaluate_func, (x)))
+                trial_statistics.append(self.pool.submit(evaluate_func, (self.objective_func, x)))
 
-            # wait all initial trials finish
+            # Wait all initial trials finish
             all_completed = False
             while not all_completed:
                 all_completed = True
-                for trial in enumerate(trial_statistics):
+                for trial in trial_statistics:
                     if not trial.done():
                         all_completed = False
                         time.sleep(0.1)
+                        break
 
             for i, trial in enumerate(trial_statistics):
-                new_y, time_taken = trial.result()
+                new_y, time_taken, _ = trial.result()
                 X.append(init[i])
                 y.append(new_y)
                 self.time_func_evals.append(time_taken)
@@ -166,7 +167,7 @@ class SyncParallelSolver(BaseParallelSolver):
             all_completed = False
             while not all_completed:
                 all_completed = True
-                for trial in enumerate(trial_statistics):
+                for trial in trial_statistics:
                     if not trial.done():
                         all_completed = False
                         time.sleep(0.1)
@@ -174,13 +175,13 @@ class SyncParallelSolver(BaseParallelSolver):
 
             # get the evaluation statistics
             for i, trial in enumerate(trial_statistics):
-                new_y, time_taken = trial.result()
+                new_y, time_taken, _ = trial.result()
                 self.time_func_evals.append(time_taken)
                 logger.info("Configuration achieved a performance of %f ", new_y)
                 logger.info("Evaluation of this configuration took %f seconds", self.time_func_evals[-1])
 
                 # Extend the data
-                self.X = np.append(self.X, new_x_batch[i], axis=0)
+                self.X = np.append(self.X, new_x_batch[i][None, :], axis=0)
                 self.y = np.append(self.y, new_y)
 
                 # Estimate incumbent
@@ -204,11 +205,8 @@ class SyncParallelSolver(BaseParallelSolver):
         return self.incumbents[-1], self.incumbents_values[-1]
 
     def choose_next_batch(self, X=None, y=None, do_optimize=True):
-        return None
-
-    def choose_next(self, X=None, y=None, do_optimize=True):
         """
-        Suggests a new point to evaluate.
+        Suggests a batch of points to evaluate.
 
         Parameters
         ----------
@@ -222,8 +220,8 @@ class SyncParallelSolver(BaseParallelSolver):
             maximized.
         Returns
         -------
-        np.ndarray(1,D)
-            Suggested point
+        np.ndarray(batch,D)
+            Suggested points
         """
 
         if X is None and y is None:
@@ -246,7 +244,7 @@ class SyncParallelSolver(BaseParallelSolver):
 
             logger.info("Maximize acquisition function...")
             t = time.time()
-            x = self.maximize_func.maximize()
+            x = self.maximize_func.maximize(batch_size=self.num_workers)
 
             logger.info("Time to maximize the acquisition function: %f", (time.time() - t))
 

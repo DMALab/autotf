@@ -6,8 +6,8 @@ import numpy as np
 
 from tuner.initial_design.init_random_uniform import init_random_uniform
 from tuner.parallel_solver.base_parallel_solver import BaseParallelSolver
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-from base_parallel_solver import evaluate_func
+from concurrent.futures import ProcessPoolExecutor
+from tuner.parallel_solver.base_parallel_solver import evaluate_func
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +60,7 @@ class AsyncParallelSolver(BaseParallelSolver):
         self.runtime = []
         self.num_workers = n_workers
         self.pool = ProcessPoolExecutor(max_workers=n_workers)
+        self.trial_statistics = []
 
     def run(self, num_iterations=10, X=None, y=None):
         """
@@ -84,7 +85,7 @@ class AsyncParallelSolver(BaseParallelSolver):
         # Save the time where we start the parallel optimization procedure
         self.time_start = time.time()
 
-        trial_statistics = []
+        self.trial_statistics = []
 
         if X is None and y is None:
             # Initial design
@@ -101,19 +102,20 @@ class AsyncParallelSolver(BaseParallelSolver):
             # Run all init config
             for i, x in enumerate(init):
                 logger.info("Evaluate: %s", x)
-                trial_statistics.append(self.pool.submit(evaluate_func, (x)))
+                self.trial_statistics.append(self.pool.submit(evaluate_func, (self.objective_func, x)))
 
             # Wait all initial trials finish
             all_completed = False
             while not all_completed:
                 all_completed = True
-                for trial in enumerate(trial_statistics):
+                for trial in self.trial_statistics:
                     if not trial.done():
                         all_completed = False
                         time.sleep(0.1)
+                        break
 
-            for i, trial in enumerate(trial_statistics):
-                new_y, time_taken = trial.result()
+            for i, trial in enumerate(self.trial_statistics):
+                new_y, time_taken, _ = trial.result()
                 X.append(init[i])
                 y.append(new_y)
                 self.time_func_evals.append(time_taken)
@@ -142,10 +144,10 @@ class AsyncParallelSolver(BaseParallelSolver):
 
         # Main asynchronous parallel optimization loop
 
-        trial_statistics = []
-        evaluate_counter = 0
-        while evaluate_counter < num_iterations - self.init_points and not len(trial_statistics):
-            if len(trial_statistics) > 2*self.num_workers:
+        self.trial_statistics = []
+        evaluate_counter = self.init_points
+        while evaluate_counter < num_iterations:
+            if len(self.trial_statistics) > 2*self.num_workers:
                 time.sleep(0.1)
             else:
                 if (evaluate_counter+1) % self.train_interval == 0:
@@ -161,43 +163,60 @@ class AsyncParallelSolver(BaseParallelSolver):
                 logger.info("Optimization overhead was %f seconds", self.time_overhead[-1])
                 logger.info("Next candidate %s", str(new_x))
 
-                trial_statistics.append(self.pool.submit(evaluate_func, (self.objective_func, new_x)))
+                self.trial_statistics.append(self.pool.submit(evaluate_func, (self.objective_func, new_x)))
 
                 evaluate_counter += 1
 
             # Get the evaluation statistics
-            for i, trial in enumerate(trial_statistics):
-                if trial.done():
-                    new_y, time_taken, new_x = trial.result()
-                    self.time_func_evals.append(time_taken)
-                    logger.info("Configuration achieved a performance of %f ", new_y)
-                    logger.info("Evaluation of this configuration took %f seconds", self.time_func_evals[-1])
+            self.collect()
 
-                    # Extend the data
-                    self.X = np.append(self.X, new_x, axis=0)
-                    self.y = np.append(self.y, new_y)
-
-                    # Estimate incumbent
-                    best_idx = np.argmin(self.y)
-                    incumbent = self.X[best_idx]
-                    incumbent_value = self.y[best_idx]
-
-                    self.incumbents.append(incumbent.tolist())
-                    self.incumbents_values.append(incumbent_value)
-                    logger.info("Current incumbent %s with estimated performance %f",
-                                str(incumbent), incumbent_value)
-
-                    self.runtime.append(time.time() - self.start_time)
-
-                    if self.output_path is not None:
-                        self.save_output(evaluate_counter)
-
-                    trial_statistics.remove(trial)
+        # Wait for all tasks finish
+        if not len(self.trial_statistics):
+            all_completed = False
+            while not all_completed:
+                all_completed = True
+                for trial in self.trial_statistics:
+                    if not trial.done():
+                        all_completed = False
+                        time.sleep(0.1)
+                        break
+            self.collect()
 
         logger.info("Return %s as incumbent with error %f ",
                     self.incumbents[-1], self.incumbents_values[-1])
 
         return self.incumbents[-1], self.incumbents_values[-1]
+
+    def collect(self):
+        # Get the evaluation statistics
+        for trial in self.trial_statistics:
+            if trial.done():
+                new_y, time_taken, new_x = trial.result()
+                self.time_func_evals.append(time_taken)
+                logger.info("Configuration achieved a performance of %f ", new_y)
+                logger.info("Evaluation of this configuration took %f seconds", self.time_func_evals[-1])
+
+                # Extend the data
+                self.X = np.append(self.X, new_x[None, :], axis=0)
+                self.y = np.append(self.y, new_y)
+
+                # Estimate incumbent
+                best_idx = np.argmin(self.y)
+                incumbent = self.X[best_idx]
+                incumbent_value = self.y[best_idx]
+
+                self.incumbents.append(incumbent.tolist())
+                self.incumbents_values.append(incumbent_value)
+                logger.info("Current incumbent %s with estimated performance %f",
+                            str(incumbent), incumbent_value)
+
+                self.runtime.append(time.time() - self.start_time)
+
+                if self.output_path is not None:
+                    self.save_output(evaluate_counter)
+
+                self.trial_statistics.remove(trial)
+
 
     def choose_next(self, X=None, y=None, do_optimize=True):
         """

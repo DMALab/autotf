@@ -24,9 +24,13 @@ class RandomSampling(BaseMaximizer):
         self.n_samples = n_samples
         super(RandomSampling, self).__init__(objective_function, lower, upper, rng)
 
-    def maximize(self):
+    def maximize(self, batch_size=1):
         """
         Maximizes the given acquisition function.
+
+        Parameters
+        ----------
+        batch_size: number of maximizer returned.
 
         Returns
         -------
@@ -47,6 +51,8 @@ class RandomSampling(BaseMaximizer):
         X = np.concatenate((rand, rand_incs), axis=0)
         y = self.objective_func(X)
 
-        x_star = X[y.argmax()]
+        if batch_size == 1:
+            return X[y.argmax()]
 
+        x_star = X[y.argsort()[-batch_size:]]
         return x_star

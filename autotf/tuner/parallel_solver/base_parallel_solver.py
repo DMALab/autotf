@@ -1,6 +1,5 @@
-
 import os
-import csv
+
 import time
 import errno
 import logging
@@ -9,11 +8,12 @@ import json
 logger = logging.getLogger(__name__)
 
 
-def evaluate_func(objective_func, x):
+def evaluate_func(params):
+    objective_func, x = params
     start_time = time.time()
     return_val = objective_func(x)
     time_overhead = time.time() - start_time
-    return return_val, time_overhead
+    return (return_val, time_overhead, x)
 
 
 class BaseParallelSolver(object):
