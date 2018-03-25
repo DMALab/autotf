@@ -1,5 +1,6 @@
-import numpy as np
 import time
+import numpy as np
+
 from tuner.fmin import bayesian_optimization
 
 
@@ -24,8 +25,10 @@ lower = np.array([0, 2, 1])
 upper = np.array([6, 5, 9])
 
 start_time = time.time()
+
 # Start Bayesian optimization to optimize the objective function
-results = bayesian_optimization(objective_function, lower, upper, num_iterations=20)
+results = bayesian_optimization(objective_function, lower, upper, num_iterations=10, n_workers=4)
+
 print(results["x_opt"])
 print(results["f_opt"])
 print("it takes: %f seconds" % (time.time() - start_time))

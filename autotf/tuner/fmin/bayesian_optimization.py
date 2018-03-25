@@ -16,6 +16,8 @@ from tuner.acquisition_functions.pi import PI
 from tuner.acquisition_functions.log_ei import LogEI
 from tuner.acquisition_functions.lcb import LCB
 from tuner.acquisition_functions.marginalization import MarginalizationGPMCMC
+from tuner.parallel_solver.sync_parallel_solver import SyncParallelSolver
+from tuner.parallel_solver.async_parallel_solver import AsyncParallelSolver
 
 
 logger = logging.getLogger(__name__)
@@ -23,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 def bayesian_optimization(objective_function, lower, upper, num_iterations=30,
                           maximizer="random", acquisition_func="log_ei", model_type="gp_mcmc",
-                          n_init=3, rng=None, output_path=None):
+                          n_init=3, rng=None, output_path=None, n_workers=1, parallel_type="sync"):
     """
     General interface for Bayesian optimization for global black box
     optimization problems.
@@ -129,10 +131,26 @@ def bayesian_optimization(objective_function, lower, upper, num_iterations=30,
         raise ValueError("'{}' is not a valid function to maximize the "
                          "acquisition function".format(maximizer))
 
-    bo = BayesianOptimization(objective_function, lower, upper,
-                              acquisition_func, model, max_func,
-                              initial_points=n_init, rng=rng,
-                              output_path=output_path)
+    bo = None
+    if n_workers == 1:
+        bo = BayesianOptimization(objective_function, lower, upper,
+                                  acquisition_func, model, max_func,
+                                  initial_points=n_init, rng=rng,
+                                  output_path=output_path)
+    else:
+        if parallel_type == "sync":
+            bo = SyncParallelSolver(objective_function, lower, upper,
+                                      acquisition_func, model, max_func,
+                                      initial_points=n_init, rng=rng,
+                                      output_path=output_path, n_workers=n_workers)
+        elif parallel_type == "async":
+            bo = AsyncParallelSolver(objective_function, lower, upper,
+                                    acquisition_func, model, max_func,
+                                    initial_points=n_init, rng=rng,
+                                    output_path=output_path, n_workers=n_workers)
+        else:
+            raise ValueError("'{}' is a unsupported parallel type"
+                             .format(parallel_type))
 
     x_best, f_min = bo.run(num_iterations)
 
