@@ -5,10 +5,9 @@ import tensorflow as tf
 import numpy as np
 import random
 
-class LinearRegression(BaseModel):
+class SVM(BaseModel):
 
     default_param = {
-        "loss" : "square_loss",
         "metrics" : [],
         "optimizer" : "sgd",
         "learning_rate" : 1e-2,
@@ -30,15 +29,13 @@ class LinearRegression(BaseModel):
                                           tf.truncated_normal_initializer())
             self.bias = tf.get_variable("bias", [], tf.float32, tf.truncated_normal_initializer())
             self.output = tf.matmul(self.input_features, self.weight) + self.bias
+            self.loss = tf.losses.hinge_loss(self.ground_truth, self.output)
 
     def set_parameter(self, param):
         for name, default_value in self.default_param:
             param.set_default(name, default_value)
 
         self.build_model()
-
-        loss_fun = param["loss"]
-        self.loss = loss_fun(self.output, self.ground_truth)
 
         metrics = [self.get_metric(metric) for metric in param["metrics"]]
         self.metrics = [metric_fun(self.output, self.ground_truth) for metric_fun in metrics]

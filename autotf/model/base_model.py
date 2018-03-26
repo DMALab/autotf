@@ -29,22 +29,22 @@ class BaseModel(object):
     def __init__(self):
         return
 
-    def set_parameter(self):
+    def set_parameter(self, param):
         return
 
-    def train(self):
+    def train(self, data):
         return
 
-    def predict(self):
+    def predict(self, data):
         return
 
-    def evaluate(self):
+    def evaluate(self, data):
         return
 
-    def model_load(self):
+    def model_load(self, path):
         return
 
-    def model_save(self):
+    def model_save(self, path):
         return
 
     @classmethod
