@@ -5,6 +5,7 @@ class BaseSelector:
 
     def select_model(self, X, y,
                      total_time,
+                     learners=None,
                      metric=None,
                      save_directory=None):
         """
