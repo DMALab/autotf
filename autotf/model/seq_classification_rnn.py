@@ -46,9 +46,9 @@ class SeqClassificationRNN(BaseModel):
             cell = tf.nn.rnn_cell.MultiRNNCell(
                 [self.cell(self.hidden_dim, state_is_tuple=True) for _ in range(self.layer_num)])
 
-            outputs, state = tf.nn.dynamic_rnn(cell, self.inputs, dtype=tf.float32, swap_memory=True)
+            outputs, state = tf.nn.dynamic_rnn(cell, self.embedding, self.seqlen, dtype=tf.float32, swap_memory=True)
 
-            pooling = tf.reduce_mean(outputs, 1)
+            pooling = tf.reduce_sum(outputs, 1) / self.seqlen
             dropout = tf.dropout(pooling, keep_prob=self.keep_prob)
 
             lr_W = tf.Variable(tf.truncated_normal((self.hidden_dim, self.class_num), stddev=0.1))
