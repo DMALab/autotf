@@ -5,6 +5,7 @@ import errno
 import logging
 import json
 import numpy as np
+import dill
 from concurrent.futures import ProcessPoolExecutor
 
 logger = logging.getLogger(__name__)
@@ -12,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 def evaluate_func(params):
     objective_func, x = params
+    objective_func = dill.loads(objective_func)
     start_time = time.time()
     return_val = objective_func(x)
     time_overhead = time.time() - start_time
@@ -64,7 +66,7 @@ class BaseParallelSolver(object):
         self.model = model
         self.acquisition_func = acquisition_func
         self.maximize_func = maximize_func
-        self.objective_func = objective_func
+        self.objective_func = dill.dumps(objective_func)
         self.task = task
         self.save_dir = save_dir
         self.trial_statistics = []

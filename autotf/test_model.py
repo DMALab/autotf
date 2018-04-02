@@ -1,9 +1,5 @@
-import numpy as np
-
 
 class TestModel(object):
-    def __init__(self):
-        pass
 
     @staticmethod
     def train(x):

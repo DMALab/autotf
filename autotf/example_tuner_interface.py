@@ -1,5 +1,4 @@
 import numpy as np
-import time
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -11,10 +10,7 @@ from test_model import TestModel
 lower = np.array([0, 2, 1])
 upper = np.array([6, 5, 9])
 
-start_time = time.time()
 # Start Bayesian optimization to optimize the objective function
 
-results = Tuner(TestModel, lower, upper, num_iterations=20)
-print(results["x_opt"])
-print(results["f_opt"])
-print("it takes: %f seconds" % (time.time() - start_time))
+tuners = Tuner(TestModel.train, lower, upper, num_iter=10, num_worker=4)
+results = tuners.run()

@@ -31,7 +31,7 @@ class Tuner(object):
 
     """
 
-    def __init__(self, obj_func, lower, upper, num_iter=10, num_worker=4, config=None, maximizer="random",
+    def __init__(self, obj_func, lower, upper, num_iter=10, num_worker=1, config=None, maximizer="random",
                  acquisition_func="log_ei",
                  model_type="gp_mcmc", n_init=3, rng=None, output_path=None,
                  parallel_type="sync"):
@@ -58,7 +58,7 @@ class Tuner(object):
         results = bayesian_optimization(
             self.objective_function, self.lower,
             self.upper, num_iterations=self.num_iterations,
-            n_workers=self.n_workers, maximizer=self.maximizer,
+            n_workers=self.num_worker, maximizer=self.maximizer,
             acquisition_func=self.acquisition_func, model_type=self.model_type,
             n_init=self.n_init, rng=self.rng, output_path=self.output_path,
             parallel_type=self.parallel_type
