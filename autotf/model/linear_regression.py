@@ -37,13 +37,13 @@ class LinearRegression(BaseModel):
 
         self.build_model()
 
-        loss_fun = param["loss"]
-        self.loss = loss_fun(self.output, self.ground_truth)
-
         metrics = [self.get_metric(metric) for metric in param["metrics"]]
         self.metrics = [metric_fun(self.output, self.ground_truth) for metric_fun in metrics]
 
-        optimizer = param["optimizer"]
+        loss_fun = self.get_loss(param["loss"])
+        self.loss = loss_fun(self.output, self.ground_truth)
+
+        optimizer = self.get_optimizer(param["optimizer"])
         learning_rate = param["learning_rate"]
         self.optimizer = optimizer(learning_rate).minimize(self.loss)
 

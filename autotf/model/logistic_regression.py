@@ -47,7 +47,7 @@ class LogisticRegression(BaseModel):
         #metrics = [self.get_metric(metric) for metric in param["metrics"]]
         #self.metrics = [metric_fun(self.output, self.ground_truth) for metric_fun in metrics]
 
-        optimizer = param["optimizer"]
+        optimizer = self.get_optimizer(param["optimizer"])
         learning_rate = param["learning_rate"]
         self.optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(self.loss)
 
