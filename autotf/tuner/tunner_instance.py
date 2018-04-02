@@ -6,7 +6,8 @@ if __name__ == "__main__":
 
     """
     class UserDefinedModel(BaseModel):
-        def __init__(): objective_value_function
+        def init(): obj_value_def
+        def set(): hyper_parameters
         def train(hyper_parameter_dict)
         def predict()
 
