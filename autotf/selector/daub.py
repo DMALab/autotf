@@ -13,10 +13,11 @@ class DAUB:
     Proc. AAAI 2016.
     """
 
-    def __init__(self, learners, x, y, ratio=1.5, b=200):
+    def __init__(self, learners, x, y, task_type='classification', ratio=1.5, b=200):
         self.learners = learners
         self.x = x
         self.y = y
+        self.task_type = task_type
         self._ratio = ratio
         self._b = b
 

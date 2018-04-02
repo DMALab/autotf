@@ -66,8 +66,8 @@ def greedy_search(x, y):
 
 def daub_search(x, y):
     t1 = time()
-    selector = FastSelector()
-    learner_num, accu = selector.select_model(x, y, total_time=None, learners=learners)
+    selector = FastSelector(task_type='classification')
+    learner_num, accu = selector.select_model(x, y)
     t2 = time()
     print('execution time', t2 - t1)
     print('leanrner = ', LEARNER_NAMES[learner_num], 'accu = ', accu)
