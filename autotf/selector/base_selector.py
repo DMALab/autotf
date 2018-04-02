@@ -1,12 +1,29 @@
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier, GradientBoostingClassifier
+from sklearn.naive_bayes import BernoulliNB, GaussianNB
+
+
 class BaseSelector:
 
-    def __init__(self):
-        pass
+    ALL_LEARNERS = [LogisticRegression(), SVC(), KNeighborsClassifier()]
 
-    def select_model(self, X, y,
-                     total_time,
-                     metric=None,
-                     save_directory=None):
+    def __init__(self,
+                 task_type,
+                 total_time=None,
+                 learners=None,
+                 save_directory=None):
+        self.task_type = task_type
+        self.total_time = total_time
+        self.learners = learners
+        self.save_directory = save_directory
+
+        self.X = None
+        self.y = None
+
+    def select_model(self, X, y, metric=None):
         """
         Find the best model with its hyperparameters from the autotf's model zool
 
@@ -14,9 +31,7 @@ class BaseSelector:
         ----------
         X: array-like or sparse matrix
         y: the target classes
-        total_time: the training time
         metric: the eay to evaluate the model
-        save_directory: the path to save the
 
         """
 
@@ -40,7 +55,7 @@ class BaseSelector:
         """
         return "best score"
 
-    def show_models(self):
+    def show_models(self, params, accu):
         """
         Display the models which the selector has found.
         :return:
