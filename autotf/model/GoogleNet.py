@@ -15,7 +15,6 @@ class GoogleNet(BaseModel):
         "learning_rate" : 1e-2,
         "batch_size" : 100,
         "num_epochs" : 25,
-        "keep_prob":0.75
     }
 
     def __init__(self,classnum):
@@ -29,8 +28,7 @@ class GoogleNet(BaseModel):
         self.inputs = tf.placeholder(tf.float32, shape=[None, 227, 227, 3])
         # 训练标签数据
         self.labels = tf.placeholder(tf.float32, shape=[None, self.class_num])
-        # dropout
-        self.keep_prob = tf.placeholder(tf.float32)
+
 
         self.conv1_7x7_s2 = self.conv2d('conv1_7x7_s2', self.inputs, 64, 7, 2)
         self.pool1_3x3_s2 = self.max_pool('pool1_3x3_s2', self.conv1_7x7_s2, 3, 2)
@@ -144,21 +142,19 @@ class GoogleNet(BaseModel):
                 param[name] = self.default_param[name]
 
         self.build_model()
-        # 定义交叉熵损失函数
-        self.keep_prob_value = param["keep_prob"]
 
+        # 定义交叉熵损失函数
         self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=self.pred, labels=self.labels))
 
         optimizer = param["optimizer"]
         learning_rate = param["learning_rate"]
-        self.optimizer = tf.train.AdamOptimizer(learning_rate).minimize(self.loss)
+        self.optimizer = tf.train.MomentumOptimizer(learning_rate,0.9).minimize(self.loss)
 
         self.correct_prediction = tf.equal(tf.argmax(self.pred, 1), tf.argmax(self.labels, 1))
         self.accuracy = tf.reduce_mean(tf.cast(self.correct_prediction, tf.float32))
 
         self.batch_size = param["batch_size"]
         self.num_epochs = param["num_epochs"]
-        print("hehe")
         print(self.num_epochs)
 
     def get_batch(self, feed_data):
@@ -174,19 +170,23 @@ class GoogleNet(BaseModel):
 
     def train(self, feed_data):
         self.sess.run(tf.global_variables_initializer())
+        trainstep = 0
         for epoch in range(0,self.num_epochs):
-            total_loss = 0.0
-            i = int(0)
+            avg_cost = 0.0
+
+            totalaccuracy = 0.0
             for batch in self.get_batch(feed_data):
                 feed_dict = {
                     self.inputs : batch["batch_xs"],
                     self.labels : batch["batch_ys"],
-                    self.keep_prob: self.keep_prob_value,
                 }
                 _, loss, train_accuracy = self.sess.run([self.optimizer, self.loss,self.accuracy], feed_dict=feed_dict)
-                print("step %d, training accuracy %g" % (i, train_accuracy))
-                total_loss +=  loss
-            print(total_loss)
+                totalaccuracy +=  train_accuracy*len(batch["batch_xs"])
+                avg_cost +=  loss
+                trainstep = trainstep + 1
+            totalaccuracy /= len(feed_data["inputs"])
+            print("train_step"+"\t"+str(trainstep)+"\t"+"epoch:"+"\t"+str(epoch+1)+"\t"+"accuracy:"+"\t"+str(totalaccuracy)+"\t"+"loss:"+"\t"+str(avg_cost))
+
 
     def conv2d(self, layer_name, inputs, out_channels, kernel_size, strides=1, padding='SAME'):
         in_channels = inputs.get_shape()[-1]
@@ -286,10 +286,9 @@ params = {
         "loss" : "square_loss",
         "metrics" : ["loss"],
         "optimizer" : "sgd",
-        "learning_rate" : 0.1,
-        "batch_size" : 64,
-        "num_epochs" : 10000,
-        "keep_prob":0.75
+        "learning_rate" : 0.0001,
+        "batch_size" : 32,
+        "num_epochs" : 1000,
     }
 
 feed_data = {"inputs":X,"labels":Y}

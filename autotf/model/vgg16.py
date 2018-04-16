@@ -174,6 +174,7 @@ class Vgg16(BaseModel):
         X = feed_data["inputs"]
         Y = feed_data["labels"]
         totalbatch = int(len(X)/self.batch_size)
+
         for i in range(0,totalbatch):
             startindex = i*self.batch_size
             endindex = (i+1)*self.batch_size
@@ -184,26 +185,22 @@ class Vgg16(BaseModel):
     def train(self, feed_data):
         self.sess.run(tf.global_variables_initializer())
         trainstep = 0
-        print("here")
         for epoch in range(self.num_epochs):
             avg_cost = 0.0
+            totalaccuracy = 0.0
             for batch in self.get_batch(feed_data):
                 feed_dict = {
                     self.inputs : batch["batch_xs"],
                     self.labels : batch["batch_ys"],
                     self.keep_prob: self.keep_prob_value,
                 }
-                _, loss = self.sess.run([self.optimizer, self.loss], feed_dict=feed_dict)
+                _, loss, acc = self.sess.run([self.optimizer, self.loss,self.accuracy], feed_dict=feed_dict)
+                totalaccuracy += acc*len(batch["batch_xs"])
                 avg_cost +=  loss
                 trainstep = trainstep + 1
-            valid_dic = {
-                    self.inputs : feed_data['ValidX'],
-                    self.labels : feed_data["ValidY"],
-                    self.keep_prob: self.keep_prob_value,
-            }
 
-            validaccuracy = self.sess.run(self.accuracy,feed_dict=valid_dic)
-            print("train_step"+"\t"+str(trainstep)+"\t"+"epoch:"+"\t"+str(epoch+1)+"\t"+"accuracy:"+"\t"+str(validaccuracy)+"\t"+"loss:"+"\t"+str(avg_cost))
+            totalaccuracy /= len(feed_data['inputs'])
+            print("train_step"+"\t"+str(trainstep)+"\t"+"epoch:"+"\t"+str(epoch+1)+"\t"+"accuracy:"+"\t"+str(totalaccuracy)+"\t"+"loss:"+"\t"+str(avg_cost))
 
     def model_load(self):
         return
@@ -225,13 +222,14 @@ def GetInput():
     return X,Y
 def GetValidation(X,Y,splitsize=0.1):
     totallen = int(len(X))
-    startindex = 0
     endindex = int(totallen * (1-splitsize))
 
     TrainX = X
     TrainY = Y
-    ValidX = X[endindex:]
-    ValidY = Y[endindex:]
+    ValidX = X
+    ValidY = Y
+    #ValidX = X[endindex:]
+    #ValidY = Y[endindex:]
     return TrainX,TrainY,ValidX,ValidY
 X,Y = GetInput()
 g = Vgg16(17)
@@ -245,10 +243,10 @@ params = {
         "loss" : "square_loss",
         "metrics" : ["loss"],
         "optimizer" : "sgd",
-        "learning_rate" : 0.0001,
+        "learning_rate" : 1e-4,
         "batch_size" : 32,
         "num_epochs" : 500,
-        "keep_prob":0.5
+        "keep_prob":0.75
     }
 
 feed_data = {"inputs":TrainX,"labels":TrainY,"ValidX":ValidX,"ValidY":ValidY}
