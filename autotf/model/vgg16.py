@@ -1,9 +1,12 @@
 #-*- coding=utf-8 -*-
 from __future__ import division, print_function, absolute_import
 
-from autotf.model.base_model import BaseModel
-from autotf.model.helper import *
+from base_model import BaseModel
+from helper import *
 import tensorflow as tf
+import pickle
+import numpy as np
+import time
 
 class Vgg16(BaseModel):
     default_param = {
@@ -16,66 +19,132 @@ class Vgg16(BaseModel):
         "keep_prob":0.75
     }
 
-    def __init__(self, feature_num,classnum):
-        self.feature_num = feature_num
+    def __init__(self,classnum):
         self.class_num = classnum
         self.model = None
         self.sess = tf.Session()
+        self.scope = {}
+        self.summary = []
+    def conv2d(self,layer_name,inputs, out_channels, kernel_size, strides=1, padding='SAME'):
+        in_channels = inputs.get_shape()[-1]
+        with tf.variable_scope(layer_name) as scope:
+            self.scope[layer_name] = scope
+            w = tf.get_variable(name='weights',
+                                trainable=True,
+                                shape=[kernel_size, kernel_size, in_channels, out_channels],
+                                initializer=tf.contrib.layers.xavier_initializer())
+            b = tf.get_variable(name='biases',
+                                trainable=True,
+                                shape=[out_channels],
+                                initializer=tf.constant_initializer(0.0))
+            inputs = tf.nn.conv2d(inputs, w, [1, strides, strides, 1], padding=padding, name='conv')
+            inputs = tf.nn.bias_add(inputs, b, name='bias_add')
+            inputs = tf.nn.relu(inputs, name='relu')
+            return inputs
+
+    def max_pool(self, layer_name, inputs, pool_size, strides, padding='SAME'):
+        with tf.name_scope(layer_name):
+            return tf.nn.max_pool(inputs, [1, pool_size, pool_size, 1], [1, strides, strides, 1], padding=padding,
+                                  name=layer_name)
+
+    def avg_pool(self, layer_name, inputs, pool_size, strides, padding='SAME'):
+        with tf.name_scope(layer_name):
+            return tf.nn.avg_pool(inputs, [1, pool_size, pool_size, 1], [1, strides, strides, 1], padding=padding,
+                                  name=layer_name)
+
+    def lrn(self, layer_name, inputs, depth_radius=5, alpha=0.0001, beta=0.75):
+        with tf.name_scope(layer_name):
+            return tf.nn.local_response_normalization(name='pool1_norm1', input=inputs, depth_radius=depth_radius,
+                                                      alpha=alpha, beta=beta)
+
+    def concat(self, layer_name, inputs):
+        with tf.name_scope(layer_name):
+            one_by_one = inputs[0]
+            three_by_three = inputs[1]
+            five_by_five = inputs[2]
+            pooling = inputs[3]
+            return tf.concat([one_by_one, three_by_three, five_by_five, pooling], axis=3)
+
+    def dropout(self, layer_name, inputs, keep_prob):
+        # dropout_rate = 1 - keep_prob
+        with tf.name_scope(layer_name):
+            return tf.nn.dropout(name=layer_name, x=inputs, keep_prob=keep_prob)
+
+    def bn(self, layer_name, inputs, epsilon=1e-3):
+        with tf.name_scope(layer_name):
+            batch_mean, batch_var = tf.nn.moments(inputs, [0])
+            inputs = tf.nn.batch_normalization(inputs, mean=batch_mean, variance=batch_var, offset=None,
+                                               scale=None, variance_epsilon=epsilon)
+            return inputs
+
+    def fc(self, layer_name, inputs, out_nodes):
+        shape = inputs.get_shape()
+        if len(shape) == 4:  # x is 4D tensor
+            size = shape[1].value * shape[2].value * shape[3].value
+        else:  # x has already flattened
+            size = shape[-1].value
+        with tf.variable_scope(layer_name) as scope:
+            self.scope[layer_name] = scope
+            w = tf.get_variable('weights',
+                                shape=[size, out_nodes],
+                                initializer=tf.contrib.layers.xavier_initializer())
+            b = tf.get_variable('biases',
+                                shape=[out_nodes],
+                                initializer=tf.constant_initializer(0.0))
+            flat_x = tf.reshape(inputs, [-1, size])
+            inputs = tf.nn.bias_add(tf.matmul(flat_x, w), b)
+            inputs = tf.nn.relu(inputs)
+            return inputs
 
     def build_model(self):
-        VGG_MEAN = [103.939, 116.779, 123.68]
 
         # 训练数据
         self.inputs = tf.placeholder(tf.float32, shape=[None, 224, 224, 3])
+
         # 训练标签数据
         self.labels = tf.placeholder(tf.float32, shape=[None, self.class_num])
+
         # dropout
         self.keep_prob = tf.placeholder(tf.float32)
 
-        # Convert RGB to BGR
-        red, green, blue = tf.split(axis=3, num_or_size_splits=3, value=self.inputs)
-        bgr = tf.concat(axis=3, values=[
-            blue * 255.0 - VGG_MEAN[0],
-            green * 255.0 - VGG_MEAN[1],
-            red * 255.0 - VGG_MEAN[2],
-        ])
-        self.conv1_1 = conv_layer(bgr, 3, 64, "conv1_1")
-        self.conv1_2 = conv_layer(self.conv1_1, 3, 64, "conv1_2")
-        self.pool1 = max_pool(self.conv1_2, 'pool1')
+        self.conv1_1 = self.conv2d("conv1_1",self.inputs,64,3)
+        self.conv1_2 = self.conv2d("conv1_2",self.conv1_1, 64,3)
+        self.pool1 = self.max_pool('pool1',self.conv1_2,pool_size=2,strides=2)
         #112*112*64
 
-        self.conv2_1 = conv_layer(self.pool1, 3, 128, "conv2_1")
-        self.conv2_2 = conv_layer(self.conv2_1, 3, 128, "conv2_2")
-        self.pool2 = max_pool(self.conv2_2, 'pool2')
+        self.conv2_1 = self.conv2d("conv2_1",self.pool1, 128,3)
+        self.conv2_2 = self.conv2d( "conv2_2",self.conv2_1, 128,3)
+        self.pool2 = self.max_pool("pool2",self.conv2_2,pool_size=2,strides=2)
         #56*56*128
 
-        self.conv3_1 = conv_layer(self.pool2, 3, 256, "conv3_1")
-        self.conv3_2 = conv_layer(self.conv3_1, 3, 256, "conv3_2")
-        self.conv3_3 = conv_layer(self.conv3_2, 3, 256, "conv3_3")
-        self.pool3 = max_pool(self.conv3_3, 'pool3')
+        self.conv3_1 = self.conv2d("conv3_1",self.pool2, 256,3)
+        self.conv3_2 = self.conv2d("conv3_2",self.conv3_1, 256,3)
+        self.conv3_3 = self.conv2d("conv3_3",self.conv3_2, 256, 3)
+        self.pool3 = self.max_pool("pool3",self.conv3_3,pool_size=2,strides=2)
         #28*28*256
 
-        self.conv4_1 = conv_layer(self.pool3, 3, 512, "conv4_1")
-        self.conv4_2 = conv_layer(self.conv4_1, 3, 512, "conv4_2")
-        self.conv4_3 = conv_layer(self.conv4_2, 3, 512, "conv4_3")
-        self.pool4 = max_pool(self.conv4_3, 'pool4')
+        self.conv4_1 = self.conv2d("conv4_1",self.pool3, 512, 3)
+        self.conv4_2 = self.conv2d("conv4_2",self.conv4_1, 512, 3)
+        self.conv4_3 = self.conv2d("conv4_3",self.conv4_2, 512, 3)
+        self.pool4 = self.max_pool("pool4",self.conv4_3, pool_size=2,strides=2)
         #14*14*512
 
-        self.conv5_1 = conv_layer(self.pool4, 3, 512, "conv5_1")
-        self.conv5_2 = conv_layer(self.conv5_1, 3, 512, "conv5_2")
-        self.conv5_3 = conv_layer(self.conv5_2, 3, 512, "conv5_3")
-        self.pool5 = max_pool(self.conv5_3, 'pool5')
+        self.conv5_1 = self.conv2d("conv5_1",self.pool4, 512, 3)
+        self.conv5_2 = self.conv2d("conv5_2",self.conv5_1, 512, 3)
+        self.conv5_3 = self.conv2d("conv5_3",self.conv5_2, 512, 3)
+        self.pool5 = self.max_pool( 'pool5',self.conv5_3,pool_size=2,strides=2)
         #7*7*512
 
-        self.fc6 = fc_layer(self.pool5, 25088, 4096, "fc6")  # 25088 = 7*7*512
-        self.relu6 = tf.nn.relu(self.fc6)
-        self.relu6 = tf.nn.dropout(self.relu6, self.keep_prob)
+        self.fc6 = self.fc("fc6",self.pool5,4096)  # 25088 = 7*7*512
 
-        self.fc7 = fc_layer(self.relu6, 4096, 4096, "fc7")  # 25088 = ((224 // (2 ** 5)) ** 2) * 512
-        self.relu7 = tf.nn.relu(self.fc7)
-        self.relu7 = tf.nn.dropout(self.relu7, self.keep_prob)
+        self.relu6 = tf.nn.dropout(self.fc6, self.keep_prob)
 
-        self.pred = fc_layer(self.relu7, 4096, self.class_num, "fc8")
+        self.fc7 = self.fc("fc7",self.relu6,4096)
+
+        self.relu7 = tf.nn.dropout(self.fc7, self.keep_prob)
+
+        self.pred = self.fc("fc8",self.relu7, self.class_num)
+
 
     def set_parameter(self, param):
         for name in self.default_param:
@@ -87,14 +156,13 @@ class Vgg16(BaseModel):
         self.keep_prob_value = param["keep_prob"]
 
         loss_fun = param["loss"]
-        self.loss = loss_fun(self.output, self.ground_truth)
+        self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=self.pred, labels=self.labels))
 
-        metrics = [self.get_metric(metric) for metric in param["metrics"]]
-        self.metrics = [metric_fun(self.output, self.ground_truth) for metric_fun in metrics]
 
         optimizer = param["optimizer"]
-        learning_rate = param["learning_rate"]
-        self.optimizer = optimizer(learning_rate).minimize(self.loss)
+        self.learning_rate = param["learning_rate"]
+
+        self.optimizer = tf.train.RMSPropOptimizer(self.learning_rate).minimize(self.loss)
 
         self.correct_prediction = tf.equal(tf.argmax(self.pred, 1), tf.argmax(self.labels, 1))
         self.accuracy = tf.reduce_mean(tf.cast(self.correct_prediction, tf.float32))
@@ -103,31 +171,86 @@ class Vgg16(BaseModel):
         self.num_epochs = param["num_epochs"]
 
     def get_batch(self, feed_data):
-        for i in range(0,int(feed_data.train.num_examples/self.batch_size)):
-            batch_xs,batch_ys = feed_data.train.next_batch(self.batch_size)
+        X = feed_data["inputs"]
+        Y = feed_data["labels"]
+        totalbatch = int(len(X)/self.batch_size)
+        for i in range(0,totalbatch):
+            startindex = i*self.batch_size
+            endindex = (i+1)*self.batch_size
+            batch_xs = X[startindex:endindex]
+            batch_ys = Y[startindex:endindex]
             yield { "batch_xs" : batch_xs, "batch_ys" : batch_ys }
 
     def train(self, feed_data):
         self.sess.run(tf.global_variables_initializer())
+        trainstep = 0
         print("here")
-
         for epoch in range(self.num_epochs):
             avg_cost = 0.0
-            i = int(0)
             for batch in self.get_batch(feed_data):
                 feed_dict = {
                     self.inputs : batch["batch_xs"],
                     self.labels : batch["batch_ys"],
                     self.keep_prob: self.keep_prob_value,
                 }
-                _, loss, train_accuracy = self.sess.run([self.train_op, self.cost,self.accuracy], feed_dict=feed_dict)
-                i = i + 1
-                if (i%100 == 0):
-                    print("step %d, training accuracy %g" % (i, train_accuracy))
+                _, loss = self.sess.run([self.optimizer, self.loss], feed_dict=feed_dict)
                 avg_cost +=  loss
-            avg_cost /= int(feed_data.train.num_examples/self.batch_size)
-            print(avg_cost)
+                trainstep = trainstep + 1
+            valid_dic = {
+                    self.inputs : feed_data['ValidX'],
+                    self.labels : feed_data["ValidY"],
+                    self.keep_prob: self.keep_prob_value,
+            }
 
+            validaccuracy = self.sess.run(self.accuracy,feed_dict=valid_dic)
+            print("train_step"+"\t"+str(trainstep)+"\t"+"epoch:"+"\t"+str(epoch+1)+"\t"+"accuracy:"+"\t"+str(validaccuracy)+"\t"+"loss:"+"\t"+str(avg_cost))
+
+    def model_load(self):
+        return
+
+    def model_save(self):
+        return
 
     def evaluate(self, feed_data):
         return
+
+def GetInput():
+    pkl_file = open('flower17/224X.pkl', 'rb')
+    X = pickle.load(pkl_file)
+    print(X.shape)
+
+    pkl_file = open('flower17/224Y.pkl', 'rb')
+    Y = pickle.load(pkl_file)
+    print(Y.shape)
+    return X,Y
+def GetValidation(X,Y,splitsize=0.1):
+    totallen = int(len(X))
+    startindex = 0
+    endindex = int(totallen * (1-splitsize))
+
+    TrainX = X
+    TrainY = Y
+    ValidX = X[endindex:]
+    ValidY = Y[endindex:]
+    return TrainX,TrainY,ValidX,ValidY
+X,Y = GetInput()
+g = Vgg16(17)
+np.set_printoptions(threshold='nan')
+TrainX,TrainY,ValidX,ValidY = GetValidation(X,Y,0.1)
+
+def stop():
+    sleep(13999999)
+    return
+params = {
+        "loss" : "square_loss",
+        "metrics" : ["loss"],
+        "optimizer" : "sgd",
+        "learning_rate" : 0.0001,
+        "batch_size" : 32,
+        "num_epochs" : 500,
+        "keep_prob":0.5
+    }
+
+feed_data = {"inputs":TrainX,"labels":TrainY,"ValidX":ValidX,"ValidY":ValidY}
+g.set_parameter(params)
+g.train(feed_data)
