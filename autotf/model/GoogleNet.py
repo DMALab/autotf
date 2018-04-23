@@ -259,39 +259,32 @@ class GoogleNet(BaseModel):
             inputs = tf.nn.relu(inputs)
             return inputs
     def model_load(self,path):
-
+        saver = tf.train.Saver()
+        saver.restore(self.sess, path)
         return
 
     def model_save(self,path):
-
+        saver = tf.train.Saver()
+        saver.save(self.sess, path)
         return
 
     def evaluate(self, feed_data):
+        avg_loss = 0.0
+        totalaccuracy = 0.0
+        totallen = len(feed_data["inputs"])
 
-        return
+        for batch in self.get_batch(feed_data):
+            feed_dict = {
+                self.inputs: batch["batch_xs"],
+                self.labels: batch["batch_ys"]
+            }
+            loss, acc = self.sess.run([self.loss, self.accuracy], feed_dict=feed_dict)
+            totalaccuracy += acc * len(batch["batch_xs"])
+            avg_loss += loss
+        avg_loss /= totallen
+        totalaccuracy /= len(feed_data['inputs'])
 
-def GetInput():
-    pkl_file = open('flower17/X.pkl', 'rb')
-    X = pickle.load(pkl_file)
-    print(X.shape)
+        res = {"accuracy":totalaccuracy,"loss":avg_loss}
+        return res
 
-    pkl_file = open('flower17/Y.pkl', 'rb')
-    Y = pickle.load(pkl_file)
-    print(Y.shape)
-    return X,Y
-X,Y = GetInput()
-g = GoogleNet(17)
-
-params = {
-        "loss" : "square_loss",
-        "metrics" : ["loss"],
-        "optimizer" : "sgd",
-        "learning_rate" : 0.0001,
-        "batch_size" : 32,
-        "num_epochs" : 1000,
-    }
-
-feed_data = {"inputs":X,"labels":Y}
-g.set_parameter(params)
-g.train(feed_data)
 

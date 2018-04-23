@@ -9,17 +9,14 @@ def max_pool(bottom, name):
 def conv_layer(bottom, in_channels, out_channels, name):
     with tf.variable_scope(name):
         filt, conv_biases = get_conv_var(3, in_channels, out_channels, name)
-
         conv = tf.nn.conv2d(bottom, filt, [1, 1, 1, 1], padding='SAME')
         bias = tf.nn.bias_add(conv, conv_biases)
         relu = tf.nn.relu(bias)
-
         return relu
 
 def fc_layer(bottom, in_size, out_size, name):
     with tf.variable_scope(name):
         weights, biases = get_fc_var(in_size, out_size, name)
-
         x = tf.reshape(bottom, [-1, in_size])
         fc = tf.nn.bias_add(tf.matmul(x, weights), biases)
 

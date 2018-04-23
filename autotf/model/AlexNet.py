@@ -6,7 +6,6 @@ import tensorflow as tf
 import numpy as np
 import random
 from tensorflow.examples.tutorials.mnist import input_data
-mnist = input_data.read_data_sets("./data/", one_hot=True)
 
 class AlexNet(BaseModel):
 
@@ -103,7 +102,7 @@ class AlexNet(BaseModel):
 
         self.build_model()
         # 定义交叉熵损失函数
-        self.cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=self.pred, labels=self.labels))
+        self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=self.pred, labels=self.labels))
         self.keep_prob_value = param["keep_prob"]
 
 
@@ -117,7 +116,7 @@ class AlexNet(BaseModel):
         self.learning_rate = param["learning_rate"]
 
         # 选择优化器
-        self.train_op = tf.train.AdamOptimizer(self.learning_rate).minimize(self.cost)
+        self.optimizer = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss)
 
         self.correct_prediction = tf.equal(tf.argmax(self.pred, 1), tf.argmax(self.labels, 1))
         self.accuracy = tf.reduce_mean(tf.cast(self.correct_prediction, tf.float32))
@@ -126,45 +125,69 @@ class AlexNet(BaseModel):
         self.num_epochs = param["num_epochs"]
 
     def get_batch(self, feed_data):
-        for i in range(0,int(feed_data.train.num_examples/self.batch_size)):
-            batch_xs,batch_ys = feed_data.train.next_batch(self.batch_size)
+        X = feed_data["inputs"]
+        Y = feed_data["labels"]
+        totalbatch = int(len(X)/self.batch_size)
+
+        for i in range(0,totalbatch):
+            startindex = i*self.batch_size
+            endindex = (i+1)*self.batch_size
+            batch_xs = X[startindex:endindex]
+            batch_ys = Y[startindex:endindex]
             yield { "batch_xs" : batch_xs, "batch_ys" : batch_ys }
 
     def train(self, feed_data):
         self.sess.run(tf.global_variables_initializer())
-        print("here")
+        trainstep = 0
+        totallen = len(feed_data["inputs"])
+        res = []
 
         for epoch in range(self.num_epochs):
             avg_cost = 0.0
-            i = int(0)
+            totalaccuracy = 0.0
             for batch in self.get_batch(feed_data):
                 feed_dict = {
                     self.inputs : batch["batch_xs"],
                     self.labels : batch["batch_ys"],
-                    self.keep_prob: self.keep_prob_value,
+                    self.keep_prob:self.keep_prob_value
                 }
-                _, loss, train_accuracy = self.sess.run([self.train_op, self.cost,self.accuracy], feed_dict=feed_dict)
-                i = i + 1
-                if (i%100 == 0):
-                    print("step %d, training accuracy %g" % (i, train_accuracy))
+                _, loss, acc = self.sess.run([self.optimizer, self.loss,self.accuracy], feed_dict=feed_dict)
+                totalaccuracy += acc*len(batch["batch_xs"])
                 avg_cost +=  loss
-            avg_cost /= int(feed_data.train.num_examples/self.batch_size)
-            print(avg_cost)
-
-
+                trainstep = trainstep + 1
+            avg_cost /= totallen
+            totalaccuracy /= len(feed_data['inputs'])
+            dic = {"train_step":trainstep,"epoch":epoch+1,"accuracy":totalaccuracy,"loss":avg_cost}
+            res.append(dic)
+            print("train_step"+"\t"+str(trainstep)+"\t"+"epoch:"+"\t"+str(epoch+1)+"\t"+"accuracy:"+"\t"+str(totalaccuracy)+"\t"+"loss:"+"\t"+str(avg_cost))
+        return res
     def evaluate(self, feed_data):
+        avg_loss = 0.0
+        totalaccuracy = 0.0
+        totallen = len(feed_data["inputs"])
 
+        for batch in self.get_batch(feed_data):
+            feed_dict = {
+                self.inputs: batch["batch_xs"],
+                self.labels: batch["batch_ys"],
+                self.keep_prob:self.keep_prob_value
+            }
+            loss, acc = self.sess.run([self.loss, self.accuracy], feed_dict=feed_dict)
+            totalaccuracy += acc * len(batch["batch_xs"])
+            avg_loss += loss
+        avg_loss /= totallen
+        totalaccuracy /= len(feed_data['inputs'])
+
+        res = {"accuracy":totalaccuracy,"loss":avg_loss}
+        return res
+
+    def model_load(self,path):
+        saver = tf.train.Saver()
+        saver.restore(self.sess, path)
         return
-params = {
-    "loss" : "square_loss",
-    "metrics" : ["loss"],
-    "optimizer" : "Adam",
-    "learning_rate" : 1e-2,
-    "batch_size" : 100,
-    "num_epochs" : 25
-}
 
-m = AlexNet(784,10)
-m.set_parameter(params)
-print(mnist.train.num_examples)
-m.train(mnist)
+    def model_save(self,path):
+        saver = tf.train.Saver()
+        saver.save(self.sess, path)
+        return
+

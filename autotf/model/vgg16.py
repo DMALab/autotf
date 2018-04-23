@@ -202,53 +202,33 @@ class Vgg16(BaseModel):
             totalaccuracy /= len(feed_data['inputs'])
             print("train_step"+"\t"+str(trainstep)+"\t"+"epoch:"+"\t"+str(epoch+1)+"\t"+"accuracy:"+"\t"+str(totalaccuracy)+"\t"+"loss:"+"\t"+str(avg_cost))
 
-    def model_load(self):
+    def model_load(self,path):
+        saver = tf.train.Saver()
+        saver.restore(self.sess, path)
         return
 
-    def model_save(self):
+    def model_save(self,path):
+        saver = tf.train.Saver()
+        saver.save(self.sess, path)
         return
 
     def evaluate(self, feed_data):
-        return
+        avg_loss = 0.0
+        totalaccuracy = 0.0
+        totallen = len(feed_data["inputs"])
 
-def GetInput():
-    pkl_file = open('flower17/224X.pkl', 'rb')
-    X = pickle.load(pkl_file)
-    print(X.shape)
+        for batch in self.get_batch(feed_data):
+            feed_dict = {
+                self.inputs: batch["batch_xs"],
+                self.labels: batch["batch_ys"],
+                self.keep_prob:self.keep_prob_value
+            }
+            loss, acc = self.sess.run([self.loss, self.accuracy], feed_dict=feed_dict)
+            totalaccuracy += acc * len(batch["batch_xs"])
+            avg_loss += loss
+        avg_loss /= totallen
+        totalaccuracy /= len(feed_data['inputs'])
 
-    pkl_file = open('flower17/224Y.pkl', 'rb')
-    Y = pickle.load(pkl_file)
-    print(Y.shape)
-    return X,Y
-def GetValidation(X,Y,splitsize=0.1):
-    totallen = int(len(X))
-    endindex = int(totallen * (1-splitsize))
+        res = {"accuracy":totalaccuracy,"loss":avg_loss}
+        return res
 
-    TrainX = X
-    TrainY = Y
-    ValidX = X
-    ValidY = Y
-    #ValidX = X[endindex:]
-    #ValidY = Y[endindex:]
-    return TrainX,TrainY,ValidX,ValidY
-X,Y = GetInput()
-g = Vgg16(17)
-np.set_printoptions(threshold='nan')
-TrainX,TrainY,ValidX,ValidY = GetValidation(X,Y,0.1)
-
-def stop():
-    sleep(13999999)
-    return
-params = {
-        "loss" : "square_loss",
-        "metrics" : ["loss"],
-        "optimizer" : "sgd",
-        "learning_rate" : 1e-4,
-        "batch_size" : 32,
-        "num_epochs" : 500,
-        "keep_prob":0.75
-    }
-
-feed_data = {"inputs":TrainX,"labels":TrainY,"ValidX":ValidX,"ValidY":ValidY}
-g.set_parameter(params)
-g.train(feed_data)
