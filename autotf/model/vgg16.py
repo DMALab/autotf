@@ -173,7 +173,9 @@ class Vgg16(BaseModel):
     def get_batch(self, feed_data):
         X = feed_data["inputs"]
         Y = feed_data["labels"]
-        totalbatch = int(len(X)/self.batch_size)
+        totalbatch = int(len(X)/self.batch_size)+1
+        if (totalbatch * self.batch_size == len(X)):
+            totalbatch = totalbatch - 1
 
         for i in range(0,totalbatch):
             startindex = i*self.batch_size
@@ -230,5 +232,16 @@ class Vgg16(BaseModel):
         totalaccuracy /= len(feed_data['inputs'])
 
         res = {"accuracy":totalaccuracy,"loss":avg_loss}
+        return res
+
+    def predict(self, feed_data):
+        res = []
+        for batch in self.get_batch(feed_data):
+            feed_dict = {
+                self.inputs: batch["batch_xs"]
+            }
+            pred = self.sess.run(self.pred, feed_dict=feed_dict)
+            res.extend(pred.tolist())
+
         return res
 
