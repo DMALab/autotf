@@ -9,6 +9,9 @@ from logistic_regression import *
 from AlexNet import *
 from vgg16 import *
 from GoogleNet import *
+from GoogleNetV2 import *
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 # This code for testing logistic regression training
 '''
 params = {
@@ -114,7 +117,7 @@ m.model_load("./ModelSavePath/vgg16.ckpt")
 dic = m.evaluate(feed_data)
 print("Evaluate:"+str(dic))
 '''
-
+'''
 
 #This Code for testing googlenet
 
@@ -146,6 +149,39 @@ m.train(feed_data)
 
 m.model_save("./ModelSavePath/GoogLeNet.ckpt")
 m.model_load("./ModelSavePath/GoogLeNet.ckpt")
+
+dic = m.evaluate(feed_data)
+print("Evaluate:"+str(dic))
+'''
+
+def GetInput():
+    pkl_file = open('flower17/X.pkl', 'rb')
+    X = pickle.load(pkl_file)
+    print(X.shape)
+
+    pkl_file = open('flower17/Y.pkl', 'rb')
+    Y = pickle.load(pkl_file)
+    print(Y.shape)
+    return X,Y
+X,Y = GetInput()
+m = GoogleNetV2(17)
+
+params = {
+        "loss" : "square_loss",
+        "metrics" : ["loss"],
+        "optimizer" : "sgd",
+        "learning_rate" : 1e-3,
+        "batch_size" : 32,
+        "num_epochs" : 100,
+    }
+
+feed_data = {"inputs":X,"labels":Y}
+m.set_parameter(params)
+m.train(feed_data)
+
+
+m.model_save("./ModelSavePath/GoogLeNetV2.ckpt")
+m.model_load("./ModelSavePath/GoogLeNetV2.ckpt")
 
 dic = m.evaluate(feed_data)
 print("Evaluate:"+str(dic))
