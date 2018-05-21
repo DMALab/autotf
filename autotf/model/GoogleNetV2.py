@@ -47,24 +47,16 @@ class GoogleNetV2(BaseModel):
 
 
         self.inception_3a_1x1 = self.conv2d_bn('inception_3a_1x1', self.pool2_3x3_s2, 64, 1, 1)
-        #self.inception_3a_1x1 = tf.layers.batch_normalization(self.inception_3a_1x1)
-
         self.inception_3a_3x3_reduce = self.conv2d_bn('inception_3a_3x3_reduce', self.pool2_3x3_s2, 64, 1, 1)
-        #self.inception_3a_3x3_reduce = tf.layers.batch_normalization(self.inception_3a_3x3_reduce)
         self.inception_3a_3x3 = self.conv2d_bn('inception_3a_3x3', self.inception_3a_3x3_reduce, 64, 3, 1)
-        #self.inception_3a_3x3 = tf.layers.batch_normalization(self.inception_3a_3x3)
 
         self.inception_3a_d_3x3_reduce = self.conv2d_bn('inception_3a_d_3x3_reduce', self.pool2_3x3_s2, 64, 1, 1)
-        #self.inception_3a_d_3x3_reduce = tf.layers.batch_normalization(self.inception_3a_d_3x3_reduce)
         self.inception_3a_d_3x3_1 = self.conv2d_bn('inception_3a_d_3x3_1', self.inception_3a_d_3x3_reduce, 96, 3, 1)
-        #self.inception_3a_d_3x3_1 = tf.layers.batch_normalization(self.inception_3a_d_3x3_1)
         self.inception_3a_d_3x3_2 = self.conv2d_bn('inception_3a_d_3x3_2', self.inception_3a_d_3x3_1,
                                                      96, 3, 1)
-        #self.inception_3a_d_3x3_2 = tf.layers.batch_normalization(self.inception_3a_d_3x3_2)
 
         self.inception_3a_pool = self.avg_pool('inception_3a_pool', self.pool2_3x3_s2, 3, 1)
         self.inception_3a_pool_proj = self.conv2d_bn('inception_3a_pool_proj', self.inception_3a_pool, 32, 1, 1)
-        #self.inception_3a_pool_proj = tf.layers.batch_normalization(self.inception_3a_pool_proj)
 
         self.inception_3a_output = self.concat('inception_3a_output', [self.inception_3a_1x1, self.inception_3a_3x3, self.inception_3a_d_3x3_2,
                                                                   self.inception_3a_pool_proj])
@@ -75,25 +67,16 @@ class GoogleNetV2(BaseModel):
         
 
         self.inception_3b_1x1 = self.conv2d_bn('inception_3b_1x1', self.inception_3a_output, 64, 1, 1)
-        #self.inception_3b_1x1 = tf.layers.batch_normalization(self.inception_3b_1x1)
 
         self.inception_3b_3x3_reduce = self.conv2d_bn('inception_3b_3x3_reduce', self.inception_3a_output, 64, 1, 1)
-        #self.inception_3b_3x3_reduce = tf.layers.batch_normalization(self.inception_3b_3x3_reduce)
         self.inception_3b_3x3 = self.conv2d_bn('inception_3b_3x3', self.inception_3b_3x3_reduce, 96, 3, 1)
-        #self.inception_3b_3x3 = tf.layers.batch_normalization(self.inception_3b_3x3)
-
 
         self.inception_3b_d_3x3_reduce = self.conv2d_bn('inception_3b_d_3x3_reduce', self.inception_3a_output, 64, 1, 1)
-        #self.inception_3b_d_3x3_reduce = tf.layers.batch_normalization(self.inception_3b_d_3x3_reduce)
         self.inception_3b_d_3x3_1 = self.conv2d_bn('inception_3b_d_3x3_1', self.inception_3b_d_3x3_reduce, 96, 3, 1)
-        #self.inception_3b_d_3x3_1 = tf.layers.batch_normalization(self.inception_3b_d_3x3_1)
         self.inception_3b_d_3x3_2 = self.conv2d_bn('inception_3b_d_3x3_2', self.inception_3b_d_3x3_1, 96, 3, 1)
-        #self.inception_3b_d_3x3_2 = tf.layers.batch_normalization(self.inception_3b_d_3x3_2)
-
 
         self.inception_3b_pool = self.avg_pool('inception_3b_pool', self.inception_3a_output, 3, 1)
         self.inception_3b_pool_proj = self.conv2d_bn('inception_3b_pool_proj', self.inception_3b_pool, 64, 1, 1)
-        #self.inception_3b_pool_proj = tf.layers.batch_normalization(self.inception_3b_pool_proj)
 
         self.inception_3b_output = self.concat('inception_3b_output', [self.inception_3b_1x1, self.inception_3b_3x3, self.inception_3b_d_3x3_2,
                                                                        self.inception_3b_pool_proj])
@@ -104,57 +87,33 @@ class GoogleNetV2(BaseModel):
 
 
         self.inception_3c_1x1 = self.conv2d_bn('inception_3c_1x1', self.inception_3b_output, 0, 1, 2)
-        #self.inception_3c_1x1 = tf.layers.batch_normalization(self.inception_3c_1x1)
-
 
         self.inception_3c_3x3_reduce = self.conv2d_bn('inception_3c_3x3_reduce', self.inception_3b_output, 128, 1, 2)
-        #self.inception_3c_3x3_reduce = tf.layers.batch_normalization(self.inception_3c_3x3_reduce)
         self.inception_3c_3x3 = self.conv2d_bn('inception_3c_3x3', self.inception_3c_3x3_reduce, 160, 3, 1)
-        #self.inception_3c_3x3 = tf.layers.batch_normalization(self.inception_3c_3x3)
-
 
         self.inception_3c_d_3x3_reduce = self.conv2d_bn('inception_3c_d_3x3_reduce', self.inception_3b_output, 64, 1, 2)
-        #self.inception_3c_d_3x3_reduce = tf.layers.batch_normalization(self.inception_3c_d_3x3_reduce)
         self.inception_3c_d_3x3_1 = self.conv2d_bn('inception_3c_d_3x3_1', self.inception_3c_d_3x3_reduce, 96, 3, 1)
-        #self.inception_3c_d_3x3_1 = tf.layers.batch_normalization(self.inception_3c_d_3x3_1)
         self.inception_3c_d_3x3_2 = self.conv2d_bn('inception_3c_d_3x3_2', self.inception_3c_d_3x3_1, 96, 3, 1)
-        #self.inception_3c_d_3x3_2 = tf.layers.batch_normalization(self.inception_3c_d_3x3_2)
-
-        
-        
         
         self.inception_3c_pool = self.max_pool('inception_3b_pool', self.inception_3b_output, 3, 2)
-
 
         self.inception_3c_output = self.concatthreee('inception_3b_output', [self.inception_3c_1x1, self.inception_3c_3x3, self.inception_3c_d_3x3_2,
                                                                        self.inception_3c_pool])
 
-
-
-        
-        
         #320 + 96 + 160 + 0 =576
         #14*14*576
 
         self.inception_4a_1x1 = self.conv2d_bn('inception_4a_1x1', self.inception_3c_output, 224, 1, 1)
-        #self.inception_4a_1x1 = tf.layers.batch_normalization(self.inception_4a_1x1)
 
         self.inception_4a_3x3_reduce = self.conv2d_bn('inception_4a_3x3_reduce', self.inception_3c_output, 64, 1, 1)
-        #self.inception_4a_3x3_reduce = tf.layers.batch_normalization(self.inception_4a_3x3_reduce)
         self.inception_4a_3x3 = self.conv2d_bn('inception_4a_3x3', self.inception_4a_3x3_reduce, 96, 3, 1)
-        #self.inception_4a_3x3_reduce = tf.layers.batch_normalization(self.inception_4a_3x3_reduce)
 
         self.inception_4a_d_3x3_reduce = self.conv2d_bn('inception_4a_d_3x3_reduce', self.inception_3c_output, 96, 1, 1)
-        #self.inception_4a_d_3x3_reduce = tf.layers.batch_normalization(self.inception_4a_d_3x3_reduce)
         self.inception_4a_d_3x3_1 = self.conv2d_bn('inception_4a_d_3x3_1', self.inception_4a_d_3x3_reduce, 128, 3, 1)
-        #self.inception_4a_d_3x3_1 = tf.layers.batch_normalization(self.inception_4a_d_3x3_1)
         self.inception_4a_d_3x3_2 = self.conv2d_bn('inception_4a_d_3x3_2', self.inception_4a_d_3x3_1, 128, 3, 1)
-        #self.inception_4a_d_3x3_2 = tf.layers.batch_normalization(self.inception_4a_d_3x3_1)
-
 
         self.inception_4a_pool = self.avg_pool('inception_4a_pool', self.inception_3c_output, 3, 1)
         self.inception_4a_pool_proj = self.conv2d_bn('inception_4a_pool_proj', self.inception_4a_pool, 128, 1, 1)
-        #self.inception_4a_pool_proj = tf.layers.batch_normalization(self.inception_4a_pool_proj)
 
         self.inception_4a_output = self.concat('inception_4a_output', [self.inception_4a_1x1, self.inception_4a_3x3, self.inception_4a_d_3x3_2,
                                                                        self.inception_4a_pool_proj])
@@ -162,152 +121,101 @@ class GoogleNetV2(BaseModel):
         #14*14*576
 
         self.inception_4b_1x1 = self.conv2d_bn('inception_4b_1x1', self.inception_4a_output, 192, 1, 1)
-        #self.inception_4b_1x1 = tf.layers.batch_normalization(self.inception_4b_1x1)
 
         self.inception_4b_3x3_reduce = self.conv2d_bn('inception_4b_3x3_reduce', self.inception_4a_output, 96, 1, 1)
-        #self.inception_4b_3x3_reduce = tf.layers.batch_normalization(self.inception_4b_3x3_reduce)
         self.inception_4b_3x3 = self.conv2d_bn('inception_4b_3x3', self.inception_4b_3x3_reduce, 128, 3, 1)
-        #self.inception_4b_3x3 = tf.layers.batch_normalization(self.inception_4b_3x3)
 
         self.inception_4b_d_3x3_reduce = self.conv2d_bn('inception_4b_d_3x3_reduce', self.inception_4a_output, 96, 1, 1)
-        #self.inception_4b_d_3x3_reduce = tf.layers.batch_normalization(self.inception_4b_d_3x3_reduce)
         self.inception_4b_d_3x3_1 = self.conv2d_bn('inception_4b_d_3x3_1', self.inception_4b_d_3x3_reduce, 128, 3, 1)
-        #self.inception_4b_d_3x3_1 = tf.layers.batch_normalization(self.inception_4b_d_3x3_1)
         self.inception_4b_d_3x3_2 = self.conv2d_bn('inception_4b_d_3x3_2', self.inception_4b_d_3x3_1, 128, 3, 1)
-        #self.inception_4b_d_3x3_2 = tf.layers.batch_normalization(self.inception_4b_d_3x3_2)
 
         self.inception_4b_pool = self.avg_pool('inception_4b_pool', self.inception_4a_output, 3, 1)
         self.inception_4b_pool_proj = self.conv2d_bn('inception_4b_pool_proj', self.inception_4b_pool, 128, 1, 1)
-        #self.inception_4b_pool_proj = tf.layers.batch_normalization(self.inception_4b_pool_proj)
 
         self.inception_4b_output = self.concat('inception_4b_output', [self.inception_4b_1x1, self.inception_4b_3x3, self.inception_4b_d_3x3_2,
                                                                        self.inception_4b_pool_proj])
         # 192 +  128 + 128+128 = 576
         # 14*14*576
-
-
-        #
         self.inception_4c_1x1 = self.conv2d_bn('inception_4c_1x1', self.inception_4b_output, 160, 1, 1)
-        #self.inception_4c_1x1 = tf.layers.batch_normalization(self.inception_4c_1x1)
 
         self.inception_4c_3x3_reduce = self.conv2d_bn('inception_4c_3x3_reduce', self.inception_4b_output, 128, 1, 1)
-        #self.inception_4c_3x3_reduce = tf.layers.batch_normalization(self.inception_4c_3x3_reduce)
         self.inception_4c_3x3 = self.conv2d_bn('inception_4c_3x3', self.inception_4c_3x3_reduce, 160, 3, 1)
 
-        #self.inception_4c_3x3 = tf.layers.batch_normalization(self.inception_4c_3x3)
-
         self.inception_4c_d_3x3_reduce = self.conv2d_bn('inception_4c_d_3x3_reduce', self.inception_4b_output, 128, 1, 1)
-        #self.inception_4c_d_3x3_reduce = tf.layers.batch_normalization(self.inception_4c_d_3x3_reduce)
         self.inception_4c_d_3x3_1 = self.conv2d_bn('inception_4c_d_3x3_1', self.inception_4c_d_3x3_reduce, 160, 3, 1)
-        #self.inception_4c_d_3x3_1 = tf.layers.batch_normalization(self.inception_4c_d_3x3_1)
         self.inception_4c_d_3x3_2 = self.conv2d_bn('inception_4c_d_3x3_2', self.inception_4c_d_3x3_1, 160, 3, 1)
-        #self.inception_4c_d_3x3_2 = tf.layers.batch_normalization(self.inception_4c_d_3x3_2)
+
 
         self.inception_4c_pool = self.avg_pool('inception_4c_pool', self.inception_4b_output, 3, 1)
         self.inception_4c_pool_proj = self.conv2d_bn('inception_4c_pool_proj', self.inception_4c_pool, 128, 1, 1)
-        #self.inception_4c_pool_proj = tf.layers.batch_normalization(self.inception_4c_pool_proj)
+
 
         self.inception_4c_output = self.concat('inception_4c_output', [self.inception_4c_1x1, self.inception_4c_3x3, self.inception_4c_d_3x3_2,
                                                                   self.inception_4c_pool_proj])
         #160+160+160+128 = 608
         #14*14*608
 
-
-
-
         self.inception_4d_1x1 = self.conv2d_bn('inception_4d_1x1', self.inception_4c_output, 96, 1, 1)
-        #self.inception_4d_1x1 = tf.layers.batch_normalization(self.inception_4d_1x1)
 
         self.inception_4d_3x3_reduce = self.conv2d_bn('inception_4d_3x3_reduce', self.inception_4c_output, 128, 1, 1)
         self.inception_4d_3x3 = self.conv2d_bn('inception_4d_3x3', self.inception_4d_3x3_reduce, 192, 3, 1)
-        #self.inception_4d_3x3 = tf.layers.batch_normalization(self.inception_4d_3x3)
 
         self.inception_4d_d_3x3_reduce = self.conv2d_bn('inception_4d_d_3x3_reduce', self.inception_4c_output, 160, 1, 1)
-        #self.inception_4d_d_3x3_reduce = tf.layers.batch_normalization(self.inception_4d_d_3x3_reduce)
         self.inception_4d_d_3x3_1 = self.conv2d_bn('inception_4d_d_3x3_1', self.inception_4d_d_3x3_reduce, 192, 3, 1)
-        #self.inception_4d_d_3x3_1 = tf.layers.batch_normalization(self.inception_4d_d_3x3_1)
         self.inception_4d_d_3x3_2 = self.conv2d_bn('inception_4d_d_3x3_2', self.inception_4d_d_3x3_1, 192, 3, 1)
-        #self.inception_4d_d_3x3_2 = tf.layers.batch_normalization(self.inception_4d_d_3x3_2)
+
 
         self.inception_4d_pool = self.avg_pool('inception_4d_pool', self.inception_4c_output, 3, 1)
-        #self.inception_4d_pool = tf.layers.batch_normalization(self.inception_4d_pool)
         self.inception_4d_pool_proj =self.conv2d_bn('inception_4d_pool_proj', self.inception_4d_pool, 128, 1, 1)
-        #self.inception_4d_pool_proj = tf.layers.batch_normalization(self.inception_4d_pool_proj)
 
         self.inception_4d_output = self.concat('inception_4d_output', [self.inception_4d_1x1, self.inception_4d_3x3, self.inception_4d_d_3x3_2,
                                                                        self.inception_4d_pool_proj])
         #96+192+192+128=608
         #14*14*608
 
-
-
-
         self.inception_4e_1x1 = self.conv2d_bn('inception_4e_1x1', self.inception_4d_output, 0, 1, 2)
-        #self.inception_4e_1x1 = tf.layers.batch_normalization(self.inception_4e_1x1)
         self.inception_4e_3x3_reduce = self.conv2d_bn('inception_4e_3x3_reduce', self.inception_4d_output, 128, 1, 2)
-        #self.inception_4e_3x3_reduce = tf.layers.batch_normalization(self.inception_4e_3x3_reduce)
         self.inception_4e_3x3 = self.conv2d_bn('inception_4e_3x3', self.inception_4e_3x3_reduce, 192, 3, 1)
-        #self.inception_4e_3x3 = tf.layers.batch_normalization(self.inception_4e_3x3)
 
         self.inception_4e_d_3x3_reduce = self.conv2d_bn('inception_4e_d_3x3_reduce', self.inception_4d_output, 192, 1, 2)
-        #self.inception_4e_d_3x3_reduce = tf.layers.batch_normalization(self.inception_4e_d_3x3_reduce)
         self.inception_4e_d_3x3_1 = self.conv2d_bn('inception_4e_d_3x3_1', self.inception_4e_d_3x3_reduce, 256, 3, 1)
-        #self.inception_4e_d_3x3_1 = tf.layers.batch_normalization(self.inception_4e_d_3x3_1)
         self.inception_4e_d_3x3_2 = self.conv2d_bn('inception_4e_d_3x3_2', self.inception_4e_d_3x3_1, 256, 3, 1)
-        #self.inception_4e_d_3x3_2 = tf.layers.batch_normalization(self.inception_4e_d_3x3_2)
 
         self.inception_4e_pool = self.max_pool('inception_4e_pool', self.inception_4d_output, 3, 2)
-
         self.inception_4e_output = self.concatthreee('inception_4e_output', [self.inception_4e_1x1, self.inception_4e_3x3, self.inception_4e_d_3x3_2,
                                                                        self.inception_4e_pool])
         #192 + 256 + 608=1056
         #7*7*1056
 
-
-
         self.inception_5a_1x1 = self.conv2d_bn('inception_5a_1x1', self.inception_4e_output, 352, 1, 1)
-        #self.inception_5a_1x1 = tf.layers.batch_normalization(self.inception_5a_1x1)
 
         self.inception_5a_3x3_reduce = self.conv2d_bn('inception_5a_3x3_reduce', self.inception_4e_output, 192, 1, 1)
-        #self.inception_5a_3x3_reduce = tf.layers.batch_normalization(self.inception_5a_3x3_reduce)
         self.inception_5a_3x3 = self.conv2d_bn('inception_5a_3x3', self.inception_5a_3x3_reduce, 320, 3, 1)
-        #self.inception_5a_3x3 = tf.layers.batch_normalization(self.inception_5a_3x3)
 
         self.inception_5a_d_3x3_reduce = self.conv2d_bn('inception_5a_d_3x3_reduce', self.inception_4e_output, 160, 1, 1)
-        #self.inception_5a_d_3x3_reduce = tf.layers.batch_normalization(self.inception_5a_d_3x3_reduce)
         self.inception_5a_d_3x3_1 = self.conv2d_bn('inception_5a_d_3x3_1', self.inception_5a_d_3x3_reduce, 224, 3, 1)
-        #self.inception_5a_d_3x3_1 = tf.layers.batch_normalization(self.inception_5a_d_3x3_1)
         self.inception_5a_d_3x3_2 = self.conv2d_bn('inception_5a_d_3x3_2', self.inception_5a_d_3x3_1, 224, 3, 1)
-        #self.inception_5a_d_3x3_2 = tf.layers.batch_normalization(self.inception_5a_d_3x3_2)
+
 
         self.inception_5a_pool = self.max_pool('inception_5a_pool', self.inception_4e_output, 3, 1)
         self.inception_5a_pool_proj = self.conv2d_bn('inception_5a_pool_proj', self.inception_5a_pool, 128, 1, 1)
-        #self.inception_5a_pool_proj = tf.layers.batch_normalization(self.inception_5a_pool_proj)
 
         self.inception_5a_output = self.concat('inception_5a_output', [self.inception_5a_1x1, self.inception_5a_3x3, self.inception_5a_d_3x3_2,
                                                                        self.inception_5a_pool_proj])
         # 352+320+ 224+128 = 1024
         # 7*7*1024
 
-
         self.inception_5b_1x1 = self.conv2d_bn('inception_5b_1x1', self.inception_5a_output, 352, 1, 1)
-        #self.inception_5b_1x1 = tf.layers.batch_normalization(self.inception_5b_1x1)
 
         self.inception_5b_3x3_reduce = self.conv2d_bn('inception_5b_3x3_reduce', self.inception_5a_output, 192, 1, 1)
-        #self.inception_5b_3x3_reduce = tf.layers.batch_normalization(self.inception_5b_3x3_reduce)
         self.inception_5b_3x3 = self.conv2d_bn('inception_5b_3x3', self.inception_5b_3x3_reduce, 320, 3, 1)
-        #self.inception_5b_3x3 = tf.layers.batch_normalization(self.inception_5b_3x3)
 
         self.inception_5b_d_3x3_reduce = self.conv2d_bn('inception_5b_d_3x3_reduce', self.inception_5a_output, 160, 1, 1)
-        #self.inception_5b_d_3x3_reduce = tf.layers.batch_normalization(self.inception_5b_d_3x3_reduce)
         self.inception_5b_d_3x3_1 = self.conv2d_bn('inception_5b_d_3x3_1', self.inception_5b_d_3x3_reduce, 224, 3, 1)
-        #self.inception_5b_d_3x3_1 = tf.layers.batch_normalization(self.inception_5b_d_3x3_1)
         self.inception_5b_d_3x3_2 = self.conv2d_bn('inception_5b_d_3x3_2', self.inception_5b_d_3x3_1, 224, 3, 1)
-        #self.inception_5b_d_3x3_2 = tf.layers.batch_normalization(self.inception_5b_d_3x3_2)
 
         self.inception_5b_pool = self.max_pool('inception_5b_pool', self.inception_5a_output, 3, 1)
         self.inception_5b_pool_proj = self.conv2d_bn('inception_5b_pool_proj', self.inception_5b_pool, 128, 1, 1)
-        #self.inception_5b_pool_proj = tf.layers.batch_normalization(self.inception_5b_pool_proj)
 
         self.inception_5b_output = self.concat('inception_5b_output', [self.inception_5b_1x1, self.inception_5b_3x3, self.inception_5b_d_3x3_2,
                                                                        self.inception_5b_pool_proj])
@@ -507,6 +415,3 @@ class GoogleNetV2(BaseModel):
             res.extend(pred.tolist())
             
         return res
-
-
-
