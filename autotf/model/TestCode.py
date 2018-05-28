@@ -10,8 +10,9 @@ from AlexNet import *
 from vgg16 import *
 from GoogleNet import *
 from GoogleNetV2 import *
+from RandomForest import *
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 # This code for testing logistic regression training
 '''
 params = {
@@ -153,7 +154,7 @@ m.model_load("./ModelSavePath/GoogLeNet.ckpt")
 dic = m.evaluate(feed_data)
 print("Evaluate:"+str(dic))
 '''
-
+'''
 def GetInput():
     pkl_file = open('flower17/X.pkl', 'rb')
     X = pickle.load(pkl_file)
@@ -184,4 +185,29 @@ m.model_save("./ModelSavePath/GoogLeNetV2.ckpt")
 m.model_load("./ModelSavePath/GoogLeNetV2.ckpt")
 
 dic = m.evaluate(feed_data)
+print("Evaluate:"+str(dic))
+'''
+
+params = {
+    "loss" : "square_loss",
+    "metrics" : ["loss"],
+    "batch_size" : 200,
+    "num_epochs" : 1,
+    "num_trees" : 10,
+    "max_nodes":1000
+}
+
+mnist = input_data.read_data_sets("./data/", one_hot=False)
+
+m = RandomForest(784,10)
+m.set_parameter(params)
+
+X,Y = mnist.train.next_batch(mnist.train.num_examples)
+
+inputdata = {"inputs":X,"labels":Y}
+m.train(inputdata)
+m.model_save("./ModelSavePath/RandomForest.ckpt")
+m.model_load("./ModelSavePath/RandomForest.ckpt")
+
+dic = m.evaluate(inputdata)
 print("Evaluate:"+str(dic))
