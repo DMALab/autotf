@@ -16,7 +16,7 @@ from GoogleNetV2 import *
 from RandomForest import *
 from LinearSvm import *
 from KernelSvm import *
-from Lstm import *
+from Rnn import *
 
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
@@ -291,12 +291,12 @@ def TestKernelSvm():
     dic = m.evaluate(feed_data)
     print("Evaluate:" + str(dic))
 
-def TestLstm():
-    df = pd.read_csv("/home/share/data/Toxic/train.csv")
-    dftest = pd.read_csv("/home/share/data/Toxic/test.csv")
+def TestRnn():
+    df = pd.read_csv("/home/share/rnndata/Toxic/train.csv")
+    dftest = pd.read_csv("/home/share/rnndata/Toxic/test.csv")
     sentences = df['comment_text'].tolist()
-    testsentence = df['comment_text'].tolist()
-    testlabels = pd.read_csv("/home/share/data/Toxic/test_labels.csv")
+    testsentence = dftest['comment_text'].tolist()
+    testlabels = pd.read_csv("/home/share/rnndata/Toxic/test_labels.csv")
     dftest = dftest.merge(testlabels, on="id", how="left")
 
     def GetLabel(idx, df):
@@ -378,25 +378,571 @@ def TestLstm():
         "batch_size": 64,
         "class_num": 2,
         "num_epochs": 1,
-        "learning_rate": 1e-4,
+        "learning_rate": 1e-3,
         "hidden_dimension": 128,
         "sentence_len":100,
         "embdding_dimension":128,
         "vocab_size":45647,
         "layer_num":3,
-        "stddev": 5.0,
-        "out_dim": 2000,
         "CellName":"RNNCell",
+        "IsBidirection": False
     }
-    m = Lstm()
+
+    m = RnnModel()
     m.set_parameter(params)
     feed_data = {"inputs": TrainX, "labels": TrainY}
     test_feed_data = {"inputs": TestX, "labels": TestY}
     m.train(feed_data, test_feed_data)
+    dic = m.evaluate(test_feed_data)
+    print(dic)
+    m.model_save("/home/share/model/RnnModel.ckpt")
+    m.model_load("/home/share/model/RnnModel.ckpt")
+    predict = m.predict(test_feed_data)
+
+def TestLstm():
+    df = pd.read_csv("/home/share/rnndata/Toxic/train.csv")
+    dftest = pd.read_csv("/home/share/rnndata/Toxic/test.csv")
+    sentences = df['comment_text'].tolist()
+    testsentence = dftest['comment_text'].tolist()
+    testlabels = pd.read_csv("/home/share/rnndata/Toxic/test_labels.csv")
+    dftest = dftest.merge(testlabels, on="id", how="left")
+
+    def GetLabel(idx, df):
+        array = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']
+        labels = df[array[idx]].tolist()
+        return labels
+
+    def GetTestIndex(testsentence, idx, df):
+        array = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']
+        labels = df[array[idx]].tolist()
+        reslabels = []
+        ressentence = []
+        for i in range(0, len(labels)):
+            if (labels[i] == -1):
+                continue
+            else:
+                reslabels.append(labels[i])
+                ressentence.append(testsentence[i])
+        return ressentence, reslabels
+
+    def ProcessSentence(sentences):
+        rule = re.compile("[^a-zA-Z0-9]")
+        for i in range(0, len(sentences)):
+            sentences[i] = rule.sub(" ", str(sentences[i]))
+        return sentences
+
+    def GetDictionary(sentences, threshold=5):
+        dictionary = {}
+        for line in sentences:
+            tokens = line.split(" ")
+            for token in tokens:
+                if token == "":
+                    continue
+                if token not in dictionary:
+                    dictionary[token] = 1
+                else:
+                    dictionary[token] = dictionary[token] + 1
+        newdictionary = {}
+        idx = 2
+        for token in dictionary:
+            if dictionary[token] > threshold:
+                newdictionary[token] = idx
+                idx = idx + 1
+
+        MaxTokens = len(newdictionary)
+        return newdictionary, MaxTokens
+
+    def BuildNumber(sentences, dictionary):
+        result = []
+        for line in sentences:
+            curline = []
+            tokens = line.split(" ")
+            for token in tokens:
+                if token == "":
+                    continue
+                if token in dictionary:
+                    curline.append(dictionary[token])
+                else:
+                    curline.append(1)
+            result.append(curline)
+        return result
+
+    sentences = ProcessSentence(sentences)
+    testsentence = ProcessSentence(testsentence)
+    testsentence, TestY = GetTestIndex(testsentence, 0, dftest)
+    dictionary, MaxTokens = GetDictionary(sentences)
+    TrainX = BuildNumber(sentences, dictionary)
+    TestX = BuildNumber(testsentence, dictionary)
+    TrainY = GetLabel(0, df)
+    TrainX = pad_sequences(TrainX, maxlen=100, value=0.)
+    TestX = pad_sequences(TestX, maxlen=100, value=0.)
+    TrainX = np.array(TrainX)
+    TrainY = np.array(TrainY)
+    TestX = np.array(TestX)
+    TestY = np.array(TestY)
+
+    params = {
+        "metrics": [],
+        "batch_size": 64,
+        "class_num": 2,
+        "num_epochs": 1,
+        "learning_rate": 1e-3,
+        "hidden_dimension": 128,
+        "sentence_len":100,
+        "embdding_dimension":128,
+        "vocab_size":45647,
+        "layer_num":3,
+        "CellName":"LSTMCell",
+        "IsBidirection": False
+    }
+
+    m = RnnModel()
+    m.set_parameter(params)
+    feed_data = {"inputs": TrainX, "labels": TrainY}
+    test_feed_data = {"inputs": TestX, "labels": TestY}
+    m.train(feed_data, test_feed_data)
+    dic =  m.evaluate(test_feed_data)
+    print(dic)
     m.model_save("/home/share/model/LstmModel.ckpt")
     m.model_load("/home/share/model/LstmModel.ckpt")
     predict = m.predict(test_feed_data)
-    print(predict)
+
+def TestGRU():
+    df = pd.read_csv("/home/share/rnndata/Toxic/train.csv")
+    dftest = pd.read_csv("/home/share/rnndata/Toxic/test.csv")
+    sentences = df['comment_text'].tolist()
+    testsentence = dftest['comment_text'].tolist()
+    testlabels = pd.read_csv("/home/share/rnndata/Toxic/test_labels.csv")
+    dftest = dftest.merge(testlabels, on="id", how="left")
+
+    def GetLabel(idx, df):
+        array = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']
+        labels = df[array[idx]].tolist()
+        return labels
+
+    def GetTestIndex(testsentence, idx, df):
+        array = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']
+        labels = df[array[idx]].tolist()
+        reslabels = []
+        ressentence = []
+        for i in range(0, len(labels)):
+            if (labels[i] == -1):
+                continue
+            else:
+                reslabels.append(labels[i])
+                ressentence.append(testsentence[i])
+        return ressentence, reslabels
+
+    def ProcessSentence(sentences):
+        rule = re.compile("[^a-zA-Z0-9]")
+        for i in range(0, len(sentences)):
+            sentences[i] = rule.sub(" ", str(sentences[i]))
+        return sentences
+
+    def GetDictionary(sentences, threshold=5):
+        dictionary = {}
+        for line in sentences:
+            tokens = line.split(" ")
+            for token in tokens:
+                if token == "":
+                    continue
+                if token not in dictionary:
+                    dictionary[token] = 1
+                else:
+                    dictionary[token] = dictionary[token] + 1
+        newdictionary = {}
+        idx = 2
+        for token in dictionary:
+            if dictionary[token] > threshold:
+                newdictionary[token] = idx
+                idx = idx + 1
+
+        MaxTokens = len(newdictionary)
+        return newdictionary, MaxTokens
+
+    def BuildNumber(sentences, dictionary):
+        result = []
+        for line in sentences:
+            curline = []
+            tokens = line.split(" ")
+            for token in tokens:
+                if token == "":
+                    continue
+                if token in dictionary:
+                    curline.append(dictionary[token])
+                else:
+                    curline.append(1)
+            result.append(curline)
+        return result
+
+    sentences = ProcessSentence(sentences)
+    testsentence = ProcessSentence(testsentence)
+    testsentence, TestY = GetTestIndex(testsentence, 0, dftest)
+    dictionary, MaxTokens = GetDictionary(sentences)
+    TrainX = BuildNumber(sentences, dictionary)
+    TestX = BuildNumber(testsentence, dictionary)
+    TrainY = GetLabel(0, df)
+    TrainX = pad_sequences(TrainX, maxlen=100, value=0.)
+    TestX = pad_sequences(TestX, maxlen=100, value=0.)
+    TrainX = np.array(TrainX)
+    TrainY = np.array(TrainY)
+    TestX = np.array(TestX)
+    TestY = np.array(TestY)
+
+    params = {
+        "metrics": [],
+        "batch_size": 64,
+        "class_num": 2,
+        "num_epochs": 1,
+        "learning_rate": 1e-3,
+        "hidden_dimension": 128,
+        "sentence_len":100,
+        "embdding_dimension":128,
+        "vocab_size":45647,
+        "layer_num":3,
+        "CellName":"GRUCell",
+        "IsBidirection":False
+    }
+
+    m = RnnModel()
+    m.set_parameter(params)
+    feed_data = {"inputs": TrainX, "labels": TrainY}
+    test_feed_data = {"inputs": TestX, "labels": TestY}
+    m.train(feed_data, test_feed_data)
+    dic =  m.evaluate(test_feed_data)
+    print(dic)
+    m.model_save("/home/share/model/GRUModel.ckpt")
+    m.model_load("/home/share/model/GRUModel.ckpt")
+    predict = m.predict(test_feed_data)
+
+def TestBiRnn():
+    df = pd.read_csv("/home/share/rnndata/Toxic/train.csv")
+    dftest = pd.read_csv("/home/share/rnndata/Toxic/test.csv")
+    sentences = df['comment_text'].tolist()
+    testsentence = dftest['comment_text'].tolist()
+    testlabels = pd.read_csv("/home/share/rnndata/Toxic/test_labels.csv")
+    dftest = dftest.merge(testlabels, on="id", how="left")
+
+    def GetLabel(idx, df):
+        array = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']
+        labels = df[array[idx]].tolist()
+        return labels
+
+    def GetTestIndex(testsentence, idx, df):
+        array = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']
+        labels = df[array[idx]].tolist()
+        reslabels = []
+        ressentence = []
+        for i in range(0, len(labels)):
+            if (labels[i] == -1):
+                continue
+            else:
+                reslabels.append(labels[i])
+                ressentence.append(testsentence[i])
+        return ressentence, reslabels
+
+    def ProcessSentence(sentences):
+        rule = re.compile("[^a-zA-Z0-9]")
+        for i in range(0, len(sentences)):
+            sentences[i] = rule.sub(" ", str(sentences[i]))
+        return sentences
+
+    def GetDictionary(sentences, threshold=5):
+        dictionary = {}
+        for line in sentences:
+            tokens = line.split(" ")
+            for token in tokens:
+                if token == "":
+                    continue
+                if token not in dictionary:
+                    dictionary[token] = 1
+                else:
+                    dictionary[token] = dictionary[token] + 1
+        newdictionary = {}
+        idx = 2
+        for token in dictionary:
+            if dictionary[token] > threshold:
+                newdictionary[token] = idx
+                idx = idx + 1
+
+        MaxTokens = len(newdictionary)
+        return newdictionary, MaxTokens
+
+    def BuildNumber(sentences, dictionary):
+        result = []
+        for line in sentences:
+            curline = []
+            tokens = line.split(" ")
+            for token in tokens:
+                if token == "":
+                    continue
+                if token in dictionary:
+                    curline.append(dictionary[token])
+                else:
+                    curline.append(1)
+            result.append(curline)
+        return result
+
+    sentences = ProcessSentence(sentences)
+    testsentence = ProcessSentence(testsentence)
+    testsentence, TestY = GetTestIndex(testsentence, 0, dftest)
+    dictionary, MaxTokens = GetDictionary(sentences)
+    TrainX = BuildNumber(sentences, dictionary)
+    TestX = BuildNumber(testsentence, dictionary)
+    TrainY = GetLabel(0, df)
+    TrainX = pad_sequences(TrainX, maxlen=100, value=0.)
+    TestX = pad_sequences(TestX, maxlen=100, value=0.)
+    TrainX = np.array(TrainX)
+    TrainY = np.array(TrainY)
+    TestX = np.array(TestX)
+    TestY = np.array(TestY)
+
+    params = {
+        "metrics": [],
+        "batch_size": 64,
+        "class_num": 2,
+        "num_epochs": 1,
+        "learning_rate": 1e-3,
+        "hidden_dimension": 128,
+        "sentence_len":100,
+        "embdding_dimension":128,
+        "vocab_size":45647,
+        "layer_num":3,
+        "CellName":"RNNCell",
+        "IsBidirection": True
+    }
+
+    m = RnnModel()
+    m.set_parameter(params)
+    feed_data = {"inputs": TrainX, "labels": TrainY}
+    test_feed_data = {"inputs": TestX, "labels": TestY}
+    m.train(feed_data, test_feed_data)
+    dic = m.evaluate(test_feed_data)
+    print(dic)
+    m.model_save("/home/share/model/RnnModel.ckpt")
+    m.model_load("/home/share/model/RnnModel.ckpt")
+    predict = m.predict(test_feed_data)
+
+def TestBiLstm():
+    df = pd.read_csv("/home/share/rnndata/Toxic/train.csv")
+    dftest = pd.read_csv("/home/share/rnndata/Toxic/test.csv")
+    sentences = df['comment_text'].tolist()
+    testsentence = dftest['comment_text'].tolist()
+    testlabels = pd.read_csv("/home/share/rnndata/Toxic/test_labels.csv")
+    dftest = dftest.merge(testlabels, on="id", how="left")
+
+    def GetLabel(idx, df):
+        array = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']
+        labels = df[array[idx]].tolist()
+        return labels
+
+    def GetTestIndex(testsentence, idx, df):
+        array = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']
+        labels = df[array[idx]].tolist()
+        reslabels = []
+        ressentence = []
+        for i in range(0, len(labels)):
+            if (labels[i] == -1):
+                continue
+            else:
+                reslabels.append(labels[i])
+                ressentence.append(testsentence[i])
+        return ressentence, reslabels
+
+    def ProcessSentence(sentences):
+        rule = re.compile("[^a-zA-Z0-9]")
+        for i in range(0, len(sentences)):
+            sentences[i] = rule.sub(" ", str(sentences[i]))
+        return sentences
+
+    def GetDictionary(sentences, threshold=5):
+        dictionary = {}
+        for line in sentences:
+            tokens = line.split(" ")
+            for token in tokens:
+                if token == "":
+                    continue
+                if token not in dictionary:
+                    dictionary[token] = 1
+                else:
+                    dictionary[token] = dictionary[token] + 1
+        newdictionary = {}
+        idx = 2
+        for token in dictionary:
+            if dictionary[token] > threshold:
+                newdictionary[token] = idx
+                idx = idx + 1
+
+        MaxTokens = len(newdictionary)
+        return newdictionary, MaxTokens
+
+    def BuildNumber(sentences, dictionary):
+        result = []
+        for line in sentences:
+            curline = []
+            tokens = line.split(" ")
+            for token in tokens:
+                if token == "":
+                    continue
+                if token in dictionary:
+                    curline.append(dictionary[token])
+                else:
+                    curline.append(1)
+            result.append(curline)
+        return result
+
+    sentences = ProcessSentence(sentences)
+    testsentence = ProcessSentence(testsentence)
+    testsentence, TestY = GetTestIndex(testsentence, 0, dftest)
+    dictionary, MaxTokens = GetDictionary(sentences)
+    TrainX = BuildNumber(sentences, dictionary)
+    TestX = BuildNumber(testsentence, dictionary)
+    TrainY = GetLabel(0, df)
+    TrainX = pad_sequences(TrainX, maxlen=100, value=0.)
+    TestX = pad_sequences(TestX, maxlen=100, value=0.)
+    TrainX = np.array(TrainX)
+    TrainY = np.array(TrainY)
+    TestX = np.array(TestX)
+    TestY = np.array(TestY)
+
+    params = {
+        "metrics": [],
+        "batch_size": 64,
+        "class_num": 2,
+        "num_epochs": 1,
+        "learning_rate": 1e-3,
+        "hidden_dimension": 128,
+        "sentence_len":100,
+        "embdding_dimension":128,
+        "vocab_size":45647,
+        "layer_num":3,
+        "CellName":"LSTMCell",
+        "IsBidirection": True
+    }
+
+    m = RnnModel()
+    m.set_parameter(params)
+    feed_data = {"inputs": TrainX, "labels": TrainY}
+    test_feed_data = {"inputs": TestX, "labels": TestY}
+    m.train(feed_data, test_feed_data)
+    dic =  m.evaluate(test_feed_data)
+    print(dic)
+    m.model_save("/home/share/model/LstmModel.ckpt")
+    m.model_load("/home/share/model/LstmModel.ckpt")
+    predict = m.predict(test_feed_data)
+
+def TestBiGRU():
+    df = pd.read_csv("/home/share/rnndata/Toxic/train.csv")
+    dftest = pd.read_csv("/home/share/rnndata/Toxic/test.csv")
+    sentences = df['comment_text'].tolist()
+    testsentence = dftest['comment_text'].tolist()
+    testlabels = pd.read_csv("/home/share/rnndata/Toxic/test_labels.csv")
+    dftest = dftest.merge(testlabels, on="id", how="left")
+
+    def GetLabel(idx, df):
+        array = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']
+        labels = df[array[idx]].tolist()
+        return labels
+
+    def GetTestIndex(testsentence, idx, df):
+        array = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']
+        labels = df[array[idx]].tolist()
+        reslabels = []
+        ressentence = []
+        for i in range(0, len(labels)):
+            if (labels[i] == -1):
+                continue
+            else:
+                reslabels.append(labels[i])
+                ressentence.append(testsentence[i])
+        return ressentence, reslabels
+
+    def ProcessSentence(sentences):
+        rule = re.compile("[^a-zA-Z0-9]")
+        for i in range(0, len(sentences)):
+            sentences[i] = rule.sub(" ", str(sentences[i]))
+        return sentences
+
+    def GetDictionary(sentences, threshold=5):
+        dictionary = {}
+        for line in sentences:
+            tokens = line.split(" ")
+            for token in tokens:
+                if token == "":
+                    continue
+                if token not in dictionary:
+                    dictionary[token] = 1
+                else:
+                    dictionary[token] = dictionary[token] + 1
+        newdictionary = {}
+        idx = 2
+        for token in dictionary:
+            if dictionary[token] > threshold:
+                newdictionary[token] = idx
+                idx = idx + 1
+
+        MaxTokens = len(newdictionary)
+        return newdictionary, MaxTokens
+
+    def BuildNumber(sentences, dictionary):
+        result = []
+        for line in sentences:
+            curline = []
+            tokens = line.split(" ")
+            for token in tokens:
+                if token == "":
+                    continue
+                if token in dictionary:
+                    curline.append(dictionary[token])
+                else:
+                    curline.append(1)
+            result.append(curline)
+        return result
+
+    sentences = ProcessSentence(sentences)
+    testsentence = ProcessSentence(testsentence)
+    testsentence, TestY = GetTestIndex(testsentence, 0, dftest)
+    dictionary, MaxTokens = GetDictionary(sentences)
+    TrainX = BuildNumber(sentences, dictionary)
+    TestX = BuildNumber(testsentence, dictionary)
+    TrainY = GetLabel(0, df)
+    TrainX = pad_sequences(TrainX, maxlen=100, value=0.)
+    TestX = pad_sequences(TestX, maxlen=100, value=0.)
+    TrainX = np.array(TrainX)
+    TrainY = np.array(TrainY)
+    TestX = np.array(TestX)
+    TestY = np.array(TestY)
+
+    params = {
+        "metrics": [],
+        "batch_size": 64,
+        "class_num": 2,
+        "num_epochs": 1,
+        "learning_rate": 1e-3,
+        "hidden_dimension": 128,
+        "sentence_len":100,
+        "embdding_dimension":128,
+        "vocab_size":45647,
+        "layer_num":3,
+        "CellName":"GRUCell",
+        "IsBidirection":True
+    }
+
+    m = RnnModel()
+    m.set_parameter(params)
+    feed_data = {"inputs": TrainX, "labels": TrainY}
+    test_feed_data = {"inputs": TestX, "labels": TestY}
+    m.train(feed_data, test_feed_data)
+    dic =  m.evaluate(test_feed_data)
+    print(dic)
+    m.model_save("/home/share/model/GRUModel.ckpt")
+    m.model_load("/home/share/model/GRUModel.ckpt")
+    predict = m.predict(test_feed_data)
 
 
+TestRnn()
 TestLstm()
+TestGRU()
+TestBiRnn()
+TestBiLstm()
+TestBiGRU()

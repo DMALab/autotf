@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 
-class Lstm():
+class RnnModel():
 
     def __init__(self):
         self.sess = tf.Session()
@@ -14,6 +14,24 @@ class Lstm():
         if name is "GRUCell":
             return tf.nn.rnn_cell.GRUCell(self.hidden_dimension)
         return None
+    def GetBiCell(self,name,inputs):
+        #inputs = tf.transpose(inputs,[1,0,2])
+        # now the inputs is [times,batchsize,embeedingsize]
+
+        #inputs = tf.unstack(inputs)
+        # inputs is [[batchsize,embeedingsize],[batchsize,embeedingsize],...[batchsize,embeedingsize]]
+
+        self.fwcell = self.GetCell(name)
+        self.bgcell = self.GetCell(name)
+
+        #the inputs is [batch,timestep,dimension]
+        outputs,_ = tf.nn.bidirectional_dynamic_rnn(self.fwcell,self.bgcell,inputs,sequence_length=self.source_sentence_length,dtype=tf.float32)
+
+        # outputs is the [2,batch_size,sentence_length,hidden_dimension]
+        outputs = tf.concat(outputs,2)
+
+        print(outputs.get_shape())
+        return outputs
     def set_parameter(self, param):
         self.layer_num = param["layer_num"]
         self.embdding_dimension = param["embdding_dimension"]
@@ -29,31 +47,46 @@ class Lstm():
         self.inputs = tf.placeholder(tf.int32, shape=[None, self.sentence_len])
         self.labels = tf.placeholder(tf.int32, shape=[None])
         self.keep_prob = tf.placeholder(tf.float32)
+        self.source_sentence_length = tf.placeholder(tf.int32,shape=[None])
 
         self.onehot = tf.one_hot(self.labels, self.class_num)
 
         self.embedding_weight = tf.Variable(tf.truncated_normal((self.vocab_size, self.embdding_dimension)))
 
         self.embedding = tf.nn.embedding_lookup(self.embedding_weight, self.inputs)
-        self.cell = self.GetCell(self.cellname)
+        #self.embedding shape is [batch,timestep,embedding_length]
+
+        if param["IsBidirection"]:
+            print(self.embedding.get_shape())
+            self.outputs = self.GetBiCell(self.cellname,self.embedding)
+        else:
+            self.cell = self.GetCell(self.cellname)
+            self.rnn = tf.nn.rnn_cell.MultiRNNCell([ self.cell  for _ in range(self.layer_num)])
+
+            # the outputs means [BatchSize,timestate,hidden_number]
+            self.outputs, _ = tf.nn.dynamic_rnn(self.rnn, self.embedding, dtype=tf.float32)
+            print(tf.shape(self.outputs))
 
         #self.cell = tf.nn.rnn_cell.BasicLSTMCell(self.hidden_dimension)
 
-        # self.lstm = tf.nn.rnn_cell.MultiRNNCell([ cell  for _ in range(self.layer_num)])
 
-        self.outputs, _ = tf.nn.dynamic_rnn(self.cell, self.embedding, dtype=tf.float32)
 
+        # the pooling means that get the sum of the  dimension 1=> add all timestate
         self.pooling = tf.reduce_sum(self.outputs, 1)
 
         self.dropout = tf.nn.dropout(self.pooling, keep_prob=self.keep_prob)
+        if param["IsBidirection"]:
+            self.fcweight = tf.get_variable("fcweight",shape=[self.hidden_dimension*2,self.class_num],initializer=tf.contrib.layers.xavier_initializer())
+            self.fcbias = tf.get_variable("fcbias",shape=[self.class_num],initializer=tf.constant_initializer(0.0))
+        else:
+            self.fcweight = tf.get_variable("fcweight",shape=[self.hidden_dimension,self.class_num],initializer=tf.contrib.layers.xavier_initializer())
+            self.fcbias = tf.get_variable("fcbias",shape=[self.class_num],initializer=tf.constant_initializer(0.0))
 
-        self.fcweight = tf.Variable(tf.truncated_normal((self.hidden_dimension, self.class_num)))
-        self.fcbias = tf.Variable(tf.zeros(self.class_num))
+        #self.prediction = tf.nn.softmax(tf.matmul(self.dropout, self.fcweight) + self.fcbias)
+        self.logits = tf.nn.bias_add(tf.matmul(self.dropout, self.fcweight),self.fcbias)
+        self.prediction = tf.nn.softmax(self.logits)
 
-        #            self.prediction = tf.nn.softmax(tf.matmul(self.dropout, self.fcweight) + self.fcbias)
-        self.prediction = tf.matmul(self.dropout, self.fcweight) + self.fcbias
-        self.result = tf.argmax(self.prediction,1)
-        self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=self.prediction, labels=self.onehot))
+        self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=self.logits, labels=self.onehot))
 
         self.optimizer = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss)
 
@@ -89,6 +122,7 @@ class Lstm():
                     self.inputs : batch["batch_xs"],
                     self.labels : batch["batch_ys"],
                     self.keep_prob: 0.8,
+                    self.source_sentence_length: [self.sentence_len]*len(batch["batch_xs"]),
                 }
                 _, loss, train_accuracy = self.sess.run([self.optimizer, self.loss,self.accuracy], feed_dict=feed_dict)
                 totalaccuracy +=  train_accuracy*len(batch["batch_xs"])
@@ -119,6 +153,7 @@ class Lstm():
                 self.inputs: batch["batch_xs"],
                 self.labels: batch["batch_ys"],
                 self.keep_prob: 1.0,
+                self.source_sentence_length: [self.sentence_len] * len(batch["batch_xs"]),
             }
             pred, loss, acc = self.sess.run([self.prediction, self.loss, self.accuracy], feed_dict=feed_dict)
             totalaccuracy += acc * len(batch["batch_xs"])
@@ -134,9 +169,9 @@ class Lstm():
             feed_dict = {
                 self.inputs: batch["batch_xs"],
                 self.keep_prob: 1.0,
+                self.source_sentence_length: [self.sentence_len] * len(batch["batch_xs"]),
             }
-
-            tepres = self.sess.run(self.result, feed_dict=feed_dict)
+            tepres = self.sess.run(self.prediction, feed_dict=feed_dict)
             res.extend(tepres.tolist())
         return res
 
