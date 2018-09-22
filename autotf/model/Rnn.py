@@ -45,11 +45,9 @@ class RnnModel():
         self.cellname = param["CellName"]
 
         self.inputs = tf.placeholder(tf.int32, shape=[None, self.sentence_len])
-        self.labels = tf.placeholder(tf.int32, shape=[None])
+        self.labels = tf.placeholder(tf.int32, shape=[None,self.class_num])
         self.keep_prob = tf.placeholder(tf.float32)
         self.source_sentence_length = tf.placeholder(tf.int32,shape=[None])
-
-        self.onehot = tf.one_hot(self.labels, self.class_num)
 
         self.embedding_weight = tf.Variable(tf.truncated_normal((self.vocab_size, self.embdding_dimension)))
 
@@ -57,7 +55,6 @@ class RnnModel():
         #self.embedding shape is [batch,timestep,embedding_length]
 
         if param["IsBidirection"]:
-            print(self.embedding.get_shape())
             self.outputs = self.GetBiCell(self.cellname,self.embedding)
         else:
             self.cell = self.GetCell(self.cellname)
@@ -65,11 +62,8 @@ class RnnModel():
 
             # the outputs means [BatchSize,timestate,hidden_number]
             self.outputs, _ = tf.nn.dynamic_rnn(self.rnn, self.embedding, dtype=tf.float32)
-            print(tf.shape(self.outputs))
 
         #self.cell = tf.nn.rnn_cell.BasicLSTMCell(self.hidden_dimension)
-
-
 
         # the pooling means that get the sum of the  dimension 1=> add all timestate
         self.pooling = tf.reduce_sum(self.outputs, 1)
@@ -86,11 +80,11 @@ class RnnModel():
         self.logits = tf.nn.bias_add(tf.matmul(self.dropout, self.fcweight),self.fcbias)
         self.prediction = tf.nn.softmax(self.logits)
 
-        self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=self.logits, labels=self.onehot))
+        self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=self.logits, labels=self.labels))
 
         self.optimizer = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss)
 
-        self.correct_prediction = tf.equal(tf.argmax(self.prediction, 1), tf.argmax(self.onehot, 1))
+        self.correct_prediction = tf.equal(tf.argmax(self.prediction, 1), tf.argmax(self.labels, 1))
         self.accuracy = tf.reduce_mean(tf.cast(self.correct_prediction, tf.float32))
 
     def get_batch(self, feed_data):
@@ -124,6 +118,7 @@ class RnnModel():
                     self.keep_prob: 0.8,
                     self.source_sentence_length: [self.sentence_len]*len(batch["batch_xs"]),
                 }
+                #self.sess.run(self.optimizer,feed_dict=feed_dict)
                 _, loss, train_accuracy = self.sess.run([self.optimizer, self.loss,self.accuracy], feed_dict=feed_dict)
                 totalaccuracy +=  train_accuracy*len(batch["batch_xs"])
                 avg_cost +=  loss

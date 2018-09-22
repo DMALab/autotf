@@ -41,49 +41,48 @@ class GoogleNetV2(BaseModel):
 
         self.pool2_3x3_s2 = self.max_pool('pool2_3x3_s2', self.conv2_3x3, 3, 2)
 
-
         #28*28*192
 
-        self.inception_3a_output = InceptionV2("inception_3a",self.pool2_3x3_s2,64,64,64,64,96,32,"avg")
+        self.inception_3a_output = self.InceptionV2("inception_3a",self.pool2_3x3_s2,64,64,64,64,96,32,"avg")
         #28*28*256
 
-        self.inception_3b_output = InceptionV2("inception_3b",self.inception_3a_output,64,64,96,64,96,64,"avg")
+        self.inception_3b_output = self.InceptionV2("inception_3b",self.inception_3a_output,64,64,96,64,96,64,"avg")
 
         #64 + 96 + 96 + 64 = 320
         #28*28*320
 
-        self.inception_3c_output =  InceptionV2("inception_3c",self.inception_3a_output,0,128,160,64,96,-1)
+        self.inception_3c_output =  self.InceptionV2("inception_3c",self.inception_3a_output,0,128,160,64,96,-1)
 
         #320 + 96 + 160 + 0 =576
         #14*14*576
 
-        self.inception_4a_output =  InceptionV2("inception_4a",self.inception_3a_output,224,64,96,96,128,128,"avg")
+        self.inception_4a_output =  self.InceptionV2("inception_4a",self.inception_3a_output,224,64,96,96,128,128,"avg")
 
         # 224+96+128+128 = 576
         #14*14*576
-        self.inception_4b_output =  InceptionV2("inception_4a",self.inception_4a_output,192,96,128,96,128,128,"avg")
+        self.inception_4b_output =  self.InceptionV2("inception_4b",self.inception_4a_output,192,96,128,96,128,128,"avg")
 
         # 192 +  128 + 128+128 = 576
         # 14*14*576
-        self.inception_4c_output =  InceptionV2("inception_4b",self.inception_4b_output,160,128,160,128,160,128,"avg")
+        self.inception_4c_output =  self.InceptionV2("inception_4c",self.inception_4b_output,160,128,160,128,160,128,"avg")
 
         #160+160+160+128 = 608
         #14*14*608
-        self.inception_4d_output =  InceptionV2("inception_4d",self.inception_4b_output,96,128,192,160,192,128,"avg")
+        self.inception_4d_output =  self.InceptionV2("inception_4d",self.inception_4b_output,96,128,192,160,192,128,"avg")
 
         #96+192+192+128=608
         #14*14*608
-        self.inception_4e_output =  InceptionV2("inception_4e",self.inception_4b_output,0,128,192,192,256,-1)
+        self.inception_4e_output =  self.InceptionV2("inception_4e",self.inception_4b_output,0,128,192,192,256,-1)
 
         #192 + 256 + 608=1056
         #7*7*1056
 
-        self.inception_5a_output =  InceptionV2("inception_5a",self.inception_4e_output,352,192,320,160,224,128,'avg')
+        self.inception_5a_output =  self.InceptionV2("inception_5a",self.inception_4e_output,352,192,320,160,224,128,'avg')
 
         # 352+320+ 224+128 = 1024
         # 7*7*1024
 
-        self.inception_5b_output =  InceptionV2("inception_5b",self.inception_4e_output,352,192,320,160,224,128,'max')
+        self.inception_5b_output =  self.InceptionV2("inception_5b",self.inception_4e_output,352,192,320,160,224,128,'max')
 
         # 352+320+224+128 = 1024
         # 7*7*1024
@@ -92,7 +91,7 @@ class GoogleNetV2(BaseModel):
 
         self.pred = self.fc('loss3_classifier', self.pool5_7x7_s1, out_nodes=self.class_num)
 
-    def InceptionV2(self,inputs,size1x1,size3x3reduce,size3x3,size3x3dreduce,sized3x3,sizepool,str="avg"):
+    def InceptionV2(self,layer_name,inputs,size1x1,size3x3reduce,size3x3,size3x3dreduce,sized3x3,sizepool,str="avg"):
         with tf.variable_scope(layer_name) as scope:
             self.scope[layer_name] = scope
             i1x1 = self.conv2d_bn('1x1', inputs, size1x1, 1, 1)
@@ -107,8 +106,8 @@ class GoogleNetV2(BaseModel):
             id3x3_2 = self.conv2d_bn('d_3x3_2', id3x3_1, sized3x3, 3, 1)
 
             if size1x1==0:
-                pool = self.max_pool('pool', id3x3_2, 3, 2)
-                output = self.concatthree('output', [i1x1, i3x3,id3x3_2,pool])
+                pool = self.max_pool('pool', id3x3_2, 3, 1)
+                output = self.concatthreee('output', [i1x1, i3x3,id3x3_2,pool])
             else:
                 if (str=="avg"):
                     pool = self.avg_pool('pool', id3x3_2, 3, 1)

@@ -7,7 +7,7 @@ from util import *
 import tensorflow as tf
 import pickle
 
-class GoogleNet(BaseModel):
+class GoogleNetV1(BaseModel):
     default_param = {
         "loss" : "square_loss",
         "metrics" : ["loss"],
@@ -38,34 +38,33 @@ class GoogleNet(BaseModel):
         self.conv2_norm2 = self.lrn('conv2_norm2', self.conv2_3x3)
         self.pool2_3x3_s2 = self.max_pool('pool2_3x3_s2', self.conv2_norm2, 3, 2)
 
-        self.inception_3a_output = Inception("inception_3a",self.pool2_3x3_s2,64,96,128,16,32,32)
+        self.inception_3a_output = self.Inception("inception_3a",self.pool2_3x3_s2,64,96,128,16,32,32)
 
-        self.inception_3b_output = Inception("inception_3b",self.inception_3a_output,128,128,192,32,96,64)
+        self.inception_3b_output = self.Inception("inception_3b",self.inception_3a_output,128,128,192,32,96,64)
 
 
         self.pool3_3x3_s2 = self.max_pool('pool3_3x3_s2', self.inception_3b_output, 3, 2)
 
-        self.inception_4a_output = Inception("incetion_4a",self.pool3_3x3_s2,192,96,208,16,48,64)
+        self.inception_4a_output = self.Inception("incetion_4a",self.pool3_3x3_s2,192,96,208,16,48,64)
 
-        self.inception_4b_output = Inception("incetion_4b", self.inception_4a_output, 160, 112, 224, 24, 64, 64)
+        self.inception_4b_output = self.Inception("incetion_4b", self.inception_4a_output, 160, 112, 224, 24, 64, 64)
 
-        self.inception_4c_output = Inception("inception_4c",self.inception_4b_output,128,128,256,24,64,64)
+        self.inception_4c_output = self.Inception("inception_4c",self.inception_4b_output,128,128,256,24,64,64)
 
-        self.inception_4d_output = Inception("inception_4d", self.inception_4c_output, 112, 144, 288, 32, 64, 64)
+        self.inception_4d_output = self.Inception("inception_4d", self.inception_4c_output, 112, 144, 288, 32, 64, 64)
 
-        self.inception_4e_output = Inception("inception_4e",self.inception_4d_output,256,160,320,32,128,128)
+        self.inception_4e_output = self.Inception("inception_4e",self.inception_4d_output,256,160,320,32,128,128)
 
         self.pool4_3x3_s2 = self.max_pool('pool4_3x3_s2', self.inception_4e_output, 3, 2)
 
-        self.inception_5a_output = Inception("inception_4e",self.pool4_3x3_s2,256,160,320,32,128,128)
+        self.inception_5a_output = self.Inception("inception_4e",self.pool4_3x3_s2,256,160,320,32,128,128)
 
-        self.inception_5b_output= Inception("inception_4e",self.inception_5a_output,384,192,384,48,128,128)
+        self.inception_5b_output= self.Inception("inception_4e",self.inception_5a_output,384,192,384,48,128,128)
 
         self.pool5_7x7_s1 = self.avg_pool('pool5_7x7_s1', self.inception_5b_output, 7, 1)
         self.pool5_drop_7x7_s1 = self.dropout('pool5_drop_7x7_s1', self.pool5_7x7_s1, 0.6)
 
         self.pred = self.fc('loss3_classifier', self.pool5_drop_7x7_s1, out_nodes=self.class_num)
-
 
     def set_parameter(self, param):
         for name in self.default_param:
