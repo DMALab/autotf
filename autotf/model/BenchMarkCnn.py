@@ -52,8 +52,6 @@ def GetCifar10Batch(width,height,inputX):
 
 def TestVGG16():
     m = Vgg16(10)
-
-
     X, Y, X_test, Y_test = GetData(224,224)
     params = {
         "loss": "square_loss",

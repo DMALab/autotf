@@ -15,8 +15,8 @@ import time
 from keras.utils.np_utils import to_categorical
 
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
-def GetData():
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+def GetIMDBData():
     max_features = 20000
     maxlen = 80  # cut texts after this number of words (among top max_features most common words)
     batch_size = 32
@@ -120,7 +120,7 @@ def GetData2():
     TestY = np.array(TestY)
     return maxlen,TrainX,TestX,TrainY,TestY
 
-def TestRnn():
+def TestRnn(epochnumber):
     tf.reset_default_graph()
     max_features, x_train, x_test, y_train, y_test, batch_size, maxlen = GetData()
     print('Build model Rnn...')
@@ -128,7 +128,7 @@ def TestRnn():
         "metrics": [],
         "batch_size": batch_size,
         "class_num": 2,
-        "num_epochs": 1,
+        "num_epochs": epochnumber,
         "learning_rate": 1e-3,
         "hidden_dimension": 128,
         "sentence_len":maxlen,
@@ -152,7 +152,7 @@ def TestRnn():
     print(dic)
     m.model_save("/home/share/model/RnnModel.ckpt")
 
-def TestLstm():
+def TestLstm(epochnumber):
     tf.reset_default_graph()
     max_features, x_train, x_test, y_train, y_test, batch_size, maxlen = GetData()
     print('Build model LSTM...\n')
@@ -160,7 +160,7 @@ def TestLstm():
         "metrics": [],
         "batch_size": batch_size,
         "class_num": 2,
-        "num_epochs": 1,
+        "num_epochs": epochnumber,
         "learning_rate": 1e-3,
         "hidden_dimension": 128,
         "sentence_len":maxlen,
@@ -186,7 +186,7 @@ def TestLstm():
     return dic
 
 
-def TestGRU():
+def TestGRU(epochnumber):
     tf.reset_default_graph()
     max_features, x_train, x_test, y_train, y_test, batch_size, maxlen = GetData()
     print('Build model GRU...')
@@ -194,7 +194,7 @@ def TestGRU():
         "metrics": [],
         "batch_size": batch_size,
         "class_num": 2,
-        "num_epochs": 1,
+        "num_epochs": epochnumber,
         "learning_rate": 1e-3,
         "hidden_dimension": 128,
         "sentence_len":maxlen,
@@ -218,7 +218,7 @@ def TestGRU():
     print(dic)
     m.model_save("/home/share/model/GRUModel.ckpt")
 
-def TestBiRnn():
+def TestBiRnn(epochnumber):
     tf.reset_default_graph()
     max_features, x_train, x_test, y_train, y_test, batch_size, maxlen = GetData()
 
@@ -226,7 +226,7 @@ def TestBiRnn():
         "metrics": [],
         "batch_size": batch_size,
         "class_num": 2,
-        "num_epochs": 1,
+        "num_epochs": epochnumber,
         "learning_rate": 1e-2,
         "hidden_dimension": 128,
         "sentence_len":maxlen,
@@ -250,7 +250,7 @@ def TestBiRnn():
     print(dic)
     m.model_save("/home/share/model/RnnModel.ckpt")
 
-def TestBiLstm():
+def TestBiLstm(epochnumber):
     tf.reset_default_graph()
     max_features, x_train, x_test, y_train, y_test, batch_size, maxlen = GetData()
 
@@ -259,7 +259,7 @@ def TestBiLstm():
         "metrics": [],
         "batch_size": batch_size,
         "class_num": 2,
-        "num_epochs": 1,
+        "num_epochs": epochnumber,
         "learning_rate": 1e-3,
         "hidden_dimension": 128,
         "sentence_len":maxlen,
@@ -284,7 +284,7 @@ def TestBiLstm():
     m.model_save("/home/share/model/LstmModel.ckpt")
     m.model_load("/home/share/model/LstmModel.ckpt")
 
-def TestBiGRU():
+def TestBiGRU(epochnumber):
     tf.reset_default_graph()
     max_features, x_train, x_test, y_train, y_test, batch_size, maxlen = GetData()
 
@@ -292,7 +292,7 @@ def TestBiGRU():
         "metrics": [],
         "batch_size": batch_size,
         "class_num": 2,
-        "num_epochs": 1,
+        "num_epochs": epochnumber,
         "learning_rate": 1e-3,
         "hidden_dimension": 128,
         "sentence_len":maxlen,
@@ -315,12 +315,11 @@ def TestBiGRU():
     dic =  m.evaluate(test_feed_data)
     print(dic)
     m.model_save("/home/share/model/GRUModel.ckpt")
-'''
-TestRnn()
-TestGRU()
-TestLstm()
 
-TestBiRnn()
-'''
-TestBiLstm()
-TestBiGRU()
+epochnumber = 15
+TestRnn(epochnumber)
+TestGRU(epochnumber)
+TestLstm(epochnumber)
+TestBiRnn(epochnumber)
+TestBiLstm(epochnumber)
+TestBiGRU(epochnumber)
