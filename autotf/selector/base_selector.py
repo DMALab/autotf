@@ -15,7 +15,8 @@ class BaseSelector:
                  total_time=None,
                  learners=None,
                  save_directory=None):
-        self.task_type = task_type
+        print(task_type.__class__)
+        self.task_type = task_type[0]
         self.total_time = total_time
         self.learners = learners
         self.save_directory = save_directory
@@ -37,11 +38,11 @@ class BaseSelector:
 
         return "the best model object"
 
-    def fit(self, X, y):
-        """
-        Train with the best model
-        """
-        pass
+    # def fit(self, X, y):
+    #     """
+    #     Train with the best model
+    #     """
+    #     pass
 
     def predict(self, X):
         """
