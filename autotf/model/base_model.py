@@ -42,10 +42,16 @@ class BaseModel(object):
         return
 
     def model_load(self, path):
+        saver = tf.train.Saver()
+        saver.restore(self.sess, path)
         return
 
+
     def model_save(self, path):
+        saver = tf.train.Saver()
+        saver.save(self.sess, path)
         return
+
 
     @classmethod
     def get_loss(cls, loss_name):

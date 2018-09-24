@@ -17,6 +17,7 @@ from vgg16 import *
 from GoogleNetV1Easy import *
 from GoogleNetV2Easy import *
 from GoogleNetV3 import *
+from ResNet import *
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
@@ -38,8 +39,6 @@ def GetData(width,height):
     return X,Y,X_test,Y_test
 
 
-
-
 def GetCifar10Batch(width,height,inputX):
     def getimage(inputx):
         result = []
@@ -49,6 +48,7 @@ def GetCifar10Batch(width,height,inputX):
         return result
     X = getimage(inputX)
     return X
+
 
 def TestVGG16():
     m = Vgg16(10)
@@ -70,6 +70,7 @@ def TestVGG16():
     dic = m.evaluate(feed_data)
     print("Evaluate:" + str(dic))
     return
+
 
 def TestGoogleV1():
     m = GoogleNetV1(10)
@@ -97,6 +98,7 @@ def TestGoogleV1():
 
     dic = m.evaluate(test_feed_data)
     print("Evaluate:" + str(dic))
+
 
 def TestGoogleV2():
     m = GoogleNetV2(10)
@@ -126,6 +128,7 @@ def TestGoogleV2():
     dic = m.evaluate(test_feed_data)
     print("Evaluate:" + str(dic))
 
+
 def TestGoogleV3():
     m = GoogleNetV3(10)
     (X, Y), (X_test, Y_test) = cifar10.load_data(dirname="/home/share/cnndata/", one_hot=True)
@@ -152,7 +155,6 @@ def TestGoogleV3():
         if (max_step%300 == 0):
             print("step:"+str(max_step))
             print("accuracy"+str(acc))
-
 
     '''
     for batchnumber in range(0,5):
@@ -182,10 +184,44 @@ def TestGoogleV3():
     dic = m.evaluate(test_feed_data)
     print("Evaluate:" + str(dic))
 
+def TestResNet():
+    m = ResNet()
+    (X, Y), (X_test, Y_test) = cifar10.load_data(dirname="/home/share/cnndata/", one_hot=True)
+
+    params = {
+        "loss": "square_loss",
+        "metrics": ["loss"],
+        "optimizer": "sgd",
+        "learning_rate": 1e-3,
+        "batch_size": 32,
+        "num_epochs": 10,
+        "class_num":10,
+        "block_num":5,
+    }
+
+
+    feed_data = {"inputs": X, "labels": Y}
+    test_feed_data = {"inputs":X_test,"labels":Y_test}
+    m.set_parameter(params)
+
+    time_start = time.time()
+    m.train(feed_data)
+    time_end =  time.time()
+
+    time_delta = time_end - time_start
+    print(time_delta/1000)
+
+    m.model_save("/home/share/model/GoogLeNet.ckpt")
+    m.model_load("/home/share/model/GoogLeNet.ckpt")
+
+    dic = m.evaluate(test_feed_data)
+    print("Evaluate:" + str(dic))
+
+
 
 #TestVGG16()
 #TestGoogleV1()
 #TestGoogleV2()
-TestGoogleV3()
+#TestGoogleV3()
 
-
+TestResNet()

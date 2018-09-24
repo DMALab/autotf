@@ -123,7 +123,7 @@ def TestBiGru(name,epoch):
     return
 
 
-epoch = 1
+epoch = 15
 
 
 TestRNN("RNN",epoch)

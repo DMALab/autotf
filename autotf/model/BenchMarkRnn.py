@@ -16,7 +16,7 @@ from keras.utils.np_utils import to_categorical
 
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "3"
-def GetIMDBData():
+def GetData():
     max_features = 20000
     maxlen = 80  # cut texts after this number of words (among top max_features most common words)
     batch_size = 32
@@ -37,7 +37,6 @@ def GetIMDBData():
 
 def GetData2():
     maxlen = 100
-
     df = pd.read_csv("/home/share/rnndata/Toxic/train.csv")
     dftest = pd.read_csv("/home/share/rnndata/Toxic/test.csv")
     sentences = df['comment_text'].tolist()
@@ -218,6 +217,7 @@ def TestGRU(epochnumber):
     print(dic)
     m.model_save("/home/share/model/GRUModel.ckpt")
 
+
 def TestBiRnn(epochnumber):
     tf.reset_default_graph()
     max_features, x_train, x_test, y_train, y_test, batch_size, maxlen = GetData()
@@ -250,11 +250,10 @@ def TestBiRnn(epochnumber):
     print(dic)
     m.model_save("/home/share/model/RnnModel.ckpt")
 
+
 def TestBiLstm(epochnumber):
     tf.reset_default_graph()
     max_features, x_train, x_test, y_train, y_test, batch_size, maxlen = GetData()
-
-
     params = {
         "metrics": [],
         "batch_size": batch_size,
@@ -284,10 +283,10 @@ def TestBiLstm(epochnumber):
     m.model_save("/home/share/model/LstmModel.ckpt")
     m.model_load("/home/share/model/LstmModel.ckpt")
 
+
 def TestBiGRU(epochnumber):
     tf.reset_default_graph()
     max_features, x_train, x_test, y_train, y_test, batch_size, maxlen = GetData()
-
     params = {
         "metrics": [],
         "batch_size": batch_size,
@@ -315,6 +314,7 @@ def TestBiGRU(epochnumber):
     dic =  m.evaluate(test_feed_data)
     print(dic)
     m.model_save("/home/share/model/GRUModel.ckpt")
+
 
 epochnumber = 15
 TestRnn(epochnumber)
