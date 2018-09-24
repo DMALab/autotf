@@ -17,10 +17,11 @@ class ResNet(BaseModel):
         "batch_size": 100,
         "num_epochs": 25,
         "block_num": 5,
+        "class_num": 10,
     }
 
-    def __init__(self, classnum):
-        self.class_num = classnum
+    def __init__(self):
+
         self.sess = tf.Session()
         self.summary = []
         self.scope = {}
@@ -37,7 +38,7 @@ class ResNet(BaseModel):
         self.conv1= self.conv2d('conv2d', self.inputs, 16, 3, padding="SAME")
         # 149*149*32
 
-        self.net = self.resnet_block("resnet1",self.conv1,block_num,16)
+        self.net = self.resnet_block("resnet1",self.conv1,self.block_num,16)
         self.net = self.resnet_block("resnet2",self.net,1,32,downsample=True)
         self.net = self.resnet_block("resnet3",self.net,self.block_num-1,32)
         self.net = self.resnet_block("resnet4", self.net, 1, 64,downsample=True)
@@ -47,8 +48,7 @@ class ResNet(BaseModel):
         self.pred = self.fc("fully_connect",self.net,self.class_num)
 
 
-    def resnet_block(self, layer_name, inputs, layer_number,out_channels, downsample=False,downsample_strides=2, activation="relu",
-                     batch_norm=True, reuse=False):
+    def resnet_block(self, layer_name, inputs, layer_number,out_channels, downsample=False,downsample_strides=2,reuse=False):
         with tf.variable_scope(layer_name) as scope:
             self.scope[layer_name] = scope
             resnet = inputs
@@ -58,12 +58,12 @@ class ResNet(BaseModel):
                 if not downsample:
                     downsample_strides = 1
 
-                resnet = self.conv2d(str(i), resnet, out_channels, 3, downsample_strides, 'SAME')
+                resnet = self.conv2d(str(i)+"/1", resnet, out_channels, 3, downsample_strides, 'SAME')
 
-                resnet = self.conv2d(str(i), resnet, out_channels, 3, downsample_strides, 'SAME')
+                resnet = self.conv2d(str(i)+"/2", resnet, out_channels, 3, 1, 'SAME')
 
                 if downsample_strides >1:
-                    identity = self.avg_pool(str(i)+"avg_pool", identity, downsample_strides, 1)
+                    identity = self.avg_pool(str(i)+"avg_pool", identity, downsample_strides, downsample_strides)
                     #NHWC do not change NHW so the pad [0,0][0,0][0,0]
 
                 if in_channels != out_channels:
@@ -106,6 +106,10 @@ class ResNet(BaseModel):
         for name in self.default_param:
             if name not in param:
                 param[name] = self.default_param[name]
+        self.batch_size = param["batch_size"]
+        self.num_epochs = param["num_epochs"]
+        self.block_num = param["block_num"]
+        self.class_num = param["class_num"]
 
         self.build_model()
 
@@ -119,9 +123,7 @@ class ResNet(BaseModel):
         self.correct_prediction = tf.equal(tf.argmax(self.pred, 1), tf.argmax(self.labels, 1))
         self.accuracy = tf.reduce_mean(tf.cast(self.correct_prediction, tf.float32))
 
-        self.batch_size = param["batch_size"]
-        self.num_epochs = param["num_epochs"]
-        self.block_num = param["block_num"]
+
         self.sess.run(tf.global_variables_initializer())
 
     def get_batch(self, feed_data):

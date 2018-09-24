@@ -192,9 +192,9 @@ def TestResNet():
         "loss": "square_loss",
         "metrics": ["loss"],
         "optimizer": "sgd",
-        "learning_rate": 1e-3,
+        "learning_rate": 1e-4,
         "batch_size": 32,
-        "num_epochs": 10,
+        "num_epochs": 200,
         "class_num":10,
         "block_num":5,
     }
