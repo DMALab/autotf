@@ -166,54 +166,6 @@ class ResNet(BaseModel):
             totalaccuracy /= len(feed_data["inputs"])
 
             print("accuracy:" + "\t" + str(totalaccuracy) + "\t" + "loss:" + "\t" + str(avg_cost))
-    def conv2d_clean(self, layer_name, inputs, out_channels, kernel_size, strides=1, padding='SAME'):
-        in_channels = inputs.get_shape()[-1]
-        with tf.variable_scope(layer_name) as scope:
-            self.scope[layer_name] = scope
-            w = tf.get_variable(name='weights',
-                                trainable=True,
-                                shape=[kernel_size, kernel_size, in_channels, out_channels],
-                                initializer=tf.contrib.layers.xavier_initializer())
-            b = tf.get_variable(name='biases',
-                                trainable=True,
-                                shape=[out_channels],
-                                initializer=tf.constant_initializer(0.0))
-            inputs = tf.nn.conv2d(inputs, w, [1, strides, strides, 1], padding=padding, name='conv')
-            inputs = tf.nn.bias_add(inputs, b, name='bias_add')
-            return inputs
-    def conv2d_bn(self, layer_name, inputs, out_channels, kernel_size, strides=1, padding='SAME'):
-        in_channels = inputs.get_shape()[-1]
-        with tf.variable_scope(layer_name) as scope:
-            self.scope[layer_name] = scope
-            w = tf.get_variable(name='weights',
-                                trainable=True,
-                                shape=[kernel_size, kernel_size, in_channels, out_channels],
-                                initializer=tf.contrib.layers.xavier_initializer())
-            b = tf.get_variable(name='biases',
-                                trainable=True,
-                                shape=[out_channels],
-                                initializer=tf.constant_initializer(0.0))
-            inputs = tf.nn.conv2d(inputs, w, [1, strides, strides, 1], padding=padding, name='conv')
-            inputs = tf.nn.bias_add(inputs, b, name='bias_add')
-            inputs = tf.layers.batch_normalization(inputs)
-            inputs = tf.nn.relu(inputs, name='relu')
-            return inputs
-    def conv2d_lr(self, layer_name, inputs, out_channels, kernel_size_l,kernel_size_r, strides=1, padding='SAME'):
-        in_channels = inputs.get_shape()[-1]
-        with tf.variable_scope(layer_name) as scope:
-            self.scope[layer_name] = scope
-            w = tf.get_variable(name='weights',
-                                trainable=True,
-                                shape=[kernel_size_l, kernel_size_r, in_channels, out_channels],
-                                initializer=tf.contrib.layers.xavier_initializer())
-            b = tf.get_variable(name='biases',
-                                trainable=True,
-                                shape=[out_channels],
-                                initializer=tf.constant_initializer(0.0))
-            inputs = tf.nn.conv2d(inputs, w, [1, strides, strides, 1], padding=padding, name='conv')
-            inputs = tf.nn.bias_add(inputs, b, name='bias_add')
-            inputs = tf.nn.relu(inputs, name='relu')
-            return inputs
 
 
     def conv2d(self, layer_name, inputs, out_channels, kernel_size, strides=1, padding='SAME'):
