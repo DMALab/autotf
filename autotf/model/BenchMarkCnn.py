@@ -9,6 +9,7 @@ import re
 import cv2
 import time
 from tensorflow.examples.tutorials.mnist import input_data
+import tflearn.datasets.mnist as mnist
 from tflearn.datasets import cifar10
 from tflearn.data_utils import to_categorical, pad_sequences
 from logistic_regression import *
@@ -18,8 +19,11 @@ from GoogleNetV1Easy import *
 from GoogleNetV2Easy import *
 from GoogleNetV3 import *
 from ResNet import *
+from res_bottleneck import *
+from resnext import *
+from densenet import *
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
 
 #This Code for testing googlenet
@@ -184,6 +188,7 @@ def TestGoogleV3():
     dic = m.evaluate(test_feed_data)
     print("Evaluate:" + str(dic))
 
+
 def TestResNet():
     m = ResNet()
     (X, Y), (X_test, Y_test) = cifar10.load_data(dirname="/home/share/cnndata/", one_hot=True)
@@ -192,14 +197,12 @@ def TestResNet():
         "loss": "square_loss",
         "metrics": ["loss"],
         "optimizer": "sgd",
-        "learning_rate": 1e-4,
-        "batch_size": 32,
+        "learning_rate": 0.1,
+        "batch_size": 128,
         "num_epochs": 200,
         "class_num":10,
         "block_num":5,
     }
-
-
     feed_data = {"inputs": X, "labels": Y}
     test_feed_data = {"inputs":X_test,"labels":Y_test}
     m.set_parameter(params)
@@ -211,17 +214,124 @@ def TestResNet():
     time_delta = time_end - time_start
     print(time_delta/1000)
 
-    m.model_save("/home/share/model/GoogLeNet.ckpt")
-    m.model_load("/home/share/model/GoogLeNet.ckpt")
+    m.model_save("/home/share/model/resnet.ckpt")
+    m.model_load("/home/share/model/resnet.ckpt")
 
     dic = m.evaluate(test_feed_data)
     print("Evaluate:" + str(dic))
 
 
+def Test_residual_bottleneck():
+    m = res_bottleneck()
+    (X, Y), (X_test, Y_test) = cifar10.load_data(dirname="/home/share/cnndata/", one_hot=True)
+    #X, Y, X_test, Y_test = mnist.load_data(one_hot=True)
+    #X = X.reshape([-1, 28, 28, 1])
+    #X_test = X_test.reshape([-1, 28, 28, 1])
 
+    params = {
+        "loss": "square_loss",
+        "metrics": ["loss"],
+        "optimizer": "sgd",
+        "learning_rate": 0.1,
+        "batch_size": 512,
+        "num_epochs": 30,
+        "class_num":10,
+        "block_num":5,
+        "decay_steps": 100,
+        "decay_rate": 0.96,
+    }
+    feed_data = {"inputs": X, "labels": Y}
+    test_feed_data = {"inputs":X_test,"labels":Y_test}
+    m.set_parameter(params)
+
+    time_start = time.time()
+    m.train(feed_data)
+    time_end =  time.time()
+
+    time_delta = time_end - time_start
+    print(time_delta/1000)
+
+    m.model_save("/home/share/model/res_bottleneck.ckpt")
+    m.model_load("/home/share/model/res_bottleneck.ckpt")
+
+    dic = m.evaluate(test_feed_data)
+    print("Evaluate:" + str(dic))
+
+def Test_resnext():
+    m = resnext()
+    (X, Y), (X_test, Y_test) = cifar10.load_data(dirname="/home/share/cnndata/", one_hot=True)
+
+    params = {
+        "loss": "square_loss",
+        "metrics": ["loss"],
+        "optimizer": "sgd",
+        "learning_rate": 0.1,
+        "batch_size": 256,
+        "num_epochs": 30,
+        "class_num":10,
+        "block_num":5,
+        "decay_steps": 32000,
+        "decay_rate": 0.1,
+    }
+
+    feed_data = {"inputs": X, "labels": Y}
+    test_feed_data = {"inputs":X_test,"labels":Y_test}
+    m.set_parameter(params)
+
+    time_start = time.time()
+    m.train(feed_data,test_feed_data)
+    time_end =  time.time()
+
+    time_delta = time_end - time_start
+    print(time_delta/1000)
+
+    m.model_save("/home/share/model/res_next.ckpt")
+    m.model_load("/home/share/model/res_next.ckpt")
+
+    dic = m.evaluate(test_feed_data)
+    print("Evaluate:" + str(dic))
+
+
+def test_densenet():
+    m = densenet()
+    (X, Y), (X_test, Y_test) = cifar10.load_data(dirname="/home/share/cnndata/", one_hot=True)
+
+    params = {
+        "loss": "square_loss",
+        "metrics": ["loss"],
+        "optimizer": "sgd",
+        "learning_rate": 0.1,
+        "batch_size": 32,
+        "num_epochs": 200,
+        "class_num":10,
+        "block_num":12,
+        "decay_steps": 32000,
+        "decay_rate": 0.1,
+        "growth": 12,
+    }
+
+    feed_data = {"inputs": X, "labels": Y}
+    test_feed_data = {"inputs":X_test,"labels":Y_test}
+    m.set_parameter(params)
+
+    time_start = time.time()
+    m.train(feed_data,test_feed_data)
+    time_end =  time.time()
+
+    time_delta = time_end - time_start
+    print(time_delta/1000)
+
+    m.model_save("/home/share/model/res_next.ckpt")
+    m.model_load("/home/share/model/res_next.ckpt")
+
+    dic = m.evaluate(test_feed_data)
+    print("Evaluate:" + str(dic))
 #TestVGG16()
 #TestGoogleV1()
 #TestGoogleV2()
 #TestGoogleV3()
 
-TestResNet()
+#TestResNet()
+Test_residual_bottleneck()
+#Test_resnext()
+#test_densenet()
