@@ -20,10 +20,11 @@ from GoogleNetV2Easy import *
 from GoogleNetV3 import *
 from ResNet import *
 from res_bottleneck import *
+from dense_bottleneck import *
 from resnext import *
 from densenet import *
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 
 #This Code for testing googlenet
@@ -232,9 +233,9 @@ def Test_residual_bottleneck():
         "loss": "square_loss",
         "metrics": ["loss"],
         "optimizer": "sgd",
-        "learning_rate": 0.1,
-        "batch_size": 512,
-        "num_epochs": 30,
+        "learning_rate": 1e-3,
+        "batch_size": 128,
+        "num_epochs": 200,
         "class_num":10,
         "block_num":5,
         "decay_steps": 100,
@@ -326,12 +327,49 @@ def test_densenet():
 
     dic = m.evaluate(test_feed_data)
     print("Evaluate:" + str(dic))
+
+
+def test_dense_bottleneck():
+    m = dense_bottleneck()
+    (X, Y), (X_test, Y_test) = cifar10.load_data(dirname="/home/share/cnndata/", one_hot=True)
+
+    params = {
+        "loss": "square_loss",
+        "metrics": ["loss"],
+        "optimizer": "sgd",
+        "learning_rate": 0.01,
+        "batch_size": 64,
+        "num_epochs": 200,
+        "class_num":10,
+        "block_num":12,
+        "decay_steps": 32000,
+        "decay_rate": 0.1,
+        "growth": 12,
+    }
+
+    feed_data = {"inputs": X, "labels": Y}
+    test_feed_data = {"inputs":X_test,"labels":Y_test}
+    m.set_parameter(params)
+
+    time_start = time.time()
+    m.train(feed_data,test_feed_data)
+    time_end =  time.time()
+
+    time_delta = time_end - time_start
+    print(time_delta/1000)
+
+    m.model_save("/home/share/model/densenet_bottleneck.ckpt")
+    m.model_load("/home/share/model/densenet_bottleneck.ckpt")
+
+    dic = m.evaluate(test_feed_data)
+    print("Evaluate:" + str(dic))
 #TestVGG16()
 #TestGoogleV1()
 #TestGoogleV2()
 #TestGoogleV3()
 
 #TestResNet()
-Test_residual_bottleneck()
+#Test_residual_bottleneck()
 #Test_resnext()
 #test_densenet()
+test_dense_bottleneck()
